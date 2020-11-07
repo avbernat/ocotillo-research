@@ -163,7 +163,10 @@ weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), c(weight1, weight2, weight3, weight4, weight5)), 3)
+summary_table = round(cbind(c(AIC(m5), AIC(m7), AIC(m4), AIC(m1), AIC(m3)),
+                                  c(delta1, delta2, delta3, delta4, delta5), 
+                                  c(me1, me2, me3, me4, me5), 
+                                  c(weight1, weight2, weight3, weight4, weight5)), 3)
 summary_table
 ```
 
@@ -259,7 +262,10 @@ weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), c(weight1, weight2, weight3, weight4, weight5)), 3)
+summary_table = round(cbind(c(AIC(m2), AIC(m3), AIC(m4), AIC(m1), AIC(m0)),
+                            c(delta1, delta2, delta3, delta4, delta5), 
+                            c(me1, me2, me3, me4, me5), 
+                            c(weight1, weight2, weight3, weight4, weight5)), 3)
 summary_table
 ```
 
@@ -276,7 +282,7 @@ Only significant covariates are listed below:
 ```{r echo=FALSE}
 m1 = lm(Circ_c ~ NBranch_c, data=ocos)
 m2 = lm(logCirc ~ NBranch_c, data=ocos)
-m3 = lm(logCirc ~ X1m_Num4, data=ocos) # Although significant, thi is not a meaningful number in this context.
+m3 = lm(logCirc ~ X1m_Num4, data=ocos) # Although significant, this is not a meaningful number in this context.
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col) 
@@ -353,7 +359,10 @@ weight3 = me3 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(delta1, delta2, delta3), c(me1, me2, me3), c(weight1, weight2, weight3)),3)
+summary_table = round(cbind(c(AIC(m1), AIC(m0), AIC(m2)),
+                            c(delta1, delta2, delta3), 
+                            c(me1, me2, me3), 
+                            c(weight1, weight2, weight3)),3)
 summary_table
 ```
 
@@ -415,7 +424,29 @@ plot_diagnostic(m3, ocos_baj) # but did this pass?
 plot_diagnostic(m4, ocos_baj) # but did this pass?
 ```
 
-Conclusion: Same top model as the all ocotillos model comparisons.
+Conclusion: Same top model as the all ocotillos model comparisons. Which is lm(formula = logCirc ~ NBranch_c, data = data)
+
+```{r}
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m1) - AIC(m1))
+delta2 = abs(AIC(m1) - AIC(m0))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3))
+
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+```
+
+```{r}
+summary_table = round(cbind(c(delta1, delta2), c(me1, me2), c(weight1, weight2)),3)
+summary_table
+```
 
 ## Number of Branches
 
@@ -483,13 +514,14 @@ anova(m7, m13, test='Chisq') # Adding C marginally improves fit
 anova(m10, m13, test='Chisq') # Adding A improves fit
 anova(m6, m13, test='Chisq') # Adding D improves fit
 
-# top models are m13, m10, m7, and m6
+# top models are m13, m10, m7, m5, and m6
 ```
 
 ```{r}
 tidy_regression(m13, output_col) # A + C + D
 tidy_regression(m10, output_col) # C + D | Add A
 tidy_regression(m7, output_col) # A + D | Add C
+tidy_regression(m5, output_col)
 tidy_regression(m6, output_col) # A + C | Add D
 ```
 
@@ -501,6 +533,7 @@ All passed. Residuals are independent.
 plot_diagnostic(m13, ocos)
 plot_diagnostic(m10, ocos)
 plot_diagnostic(m7, ocos)
+plot_diagnostic(m5, ocos)
 plot_diagnostic(m6, ocos)
 ```
 
@@ -510,12 +543,10 @@ plot_diagnostic(m6, ocos)
 ```{r}
 # Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
 
-# top models are m13, m7, and m6, m10
-
 delta1 = 0 # abs(AIC(m13) - AIC(m13))
 delta2 = abs(AIC(m13) - AIC(m7))
 delta3 = abs(AIC(m13) - AIC(m6))
-delta4 = abs(AIC(m13) - AIC(m10))
+delta4 = abs(AIC(m13) - AIC(m5))
 
 me1 <- exp( -0.5 * delta1)
 me2 <- exp( -0.5 * delta2)
@@ -533,7 +564,10 @@ weight4 = me4 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(delta1, delta2, delta3, delta4), c(me1, me2, me3, me4), c(weight1, weight2, weight3, weight4)),3)
+summary_table = round(cbind(c(AIC(m13), AIC(m7), AIC(m6), AIC(m5)),
+                            c(delta1, delta2, delta3, delta4), 
+                            c(me1, me2, me3, me4), 
+                            c(weight1, weight2, weight3, weight4)),3)
 summary_table
 ```
 
