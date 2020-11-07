@@ -155,11 +155,16 @@ me5 <- exp( -0.5 * delta5)
 
 sum <- sum(c(me1, me2, me3, me4, me5))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
-me4 / (sum)
-me5 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
+weight5 = me5 / (sum)
+```
+
+```{r}
+summary_table = round(cbind(c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), c(weight1, weight2, weight3, weight4, weight5)), 3)
+summary_table
 ```
 
 ```{r}
@@ -246,11 +251,16 @@ me5 <- exp( -0.5 * delta5)
 
 sum <- sum(c(me1, me2, me3, me4, me5))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
-me4 / (sum)
-me5 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
+weight5 = me5 / (sum)
+```
+
+```{r}
+summary_table = round(cbind(c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), c(weight1, weight2, weight3, weight4, weight5)), 3)
+summary_table
 ```
 
 Only factor that largely influences ocotillo height is terminal segment length.
@@ -337,9 +347,14 @@ me3 <- exp( -0.5 * delta3)
 
 sum <- sum(c(me1, me2, me3))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+```
+
+```{r}
+summary_table = round(cbind(c(delta1, delta2, delta3), c(me1, me2, me3), c(weight1, weight2, weight3)),3)
+summary_table
 ```
 
 ### Bajada Ocotillos
