@@ -526,14 +526,15 @@ me4 <- exp( -0.5 * delta4)
 
 sum <- sum(c(me1, me2, me3, me4))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
-me4 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
 ```
 
 ```{r}
-colnames(ocos_baj)
+summary_table = round(cbind(c(delta1, delta2, delta3, delta4), c(me1, me2, me3, me4), c(weight1, weight2, weight3, weight4)),3)
+summary_table
 ```
 
 ### Bajada Ocos
@@ -686,10 +687,8 @@ tidy_regression(m10, output_col)
 tidy_regression(m6, output_col) 
 ```
 
-
 **Comparing best fits**
 
-  
 ```{r}
 m0 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b + Watershed_c, ocos_baj)
 m1 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b + Elevation_c, ocos_baj)
@@ -741,15 +740,6 @@ plot_diagnostic(m8, ocos_baj) # does not pass confidently
 
 **Calculate likelihood and weights**
 
-plot_diagnostic(m2, ocos_baj)
-plot_diagnostic(m1, ocos_baj)
-plot_diagnostic(m5, ocos_baj)
-plot_diagnostic(m0, ocos_baj)
-plot_diagnostic(m3, ocos_baj)
-plot_diagnostic(m4, ocos_baj)
-plot_diagnostic(m6, ocos_baj)
-plot_diagnostic(m7, ocos_baj)
-
 ```{r}
 # Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
 
@@ -771,11 +761,16 @@ me5 <- exp( -0.5 * delta5)
 
 sum <- sum(c(me1, me2, me3, me4, me5))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
-me4 / (sum)
-me5 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
+weight5 = me5 / (sum)
+```
+
+```{r}
+summary_table = round(cbind(c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), c(weight1, weight2, weight3, weight4, weight5)),3)
+summary_table
 ```
 
 # Mixed Effect Modeling of Ocotillo Terminal Segments
@@ -917,11 +912,17 @@ me4 <- exp( -0.5 * delta4)
 
 sum <- sum(c(me1, me2, me3, me4))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
-me4 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
 ```
+
+```{r}
+summary_table = round(cbind(c(delta1, delta2, delta3, delta4), c(me1, me2, me3, me4), c(weight1, weight2, weight3, weight4)),3)
+summary_table
+```
+
 
 ## Principal Component Analysis (PCA)
 
