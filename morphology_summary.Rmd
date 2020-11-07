@@ -167,6 +167,7 @@ summary_table = round(cbind(c(AIC(m5), AIC(m7), AIC(m4), AIC(m1), AIC(m3)),
                                   c(delta1, delta2, delta3, delta4, delta5), 
                                   c(me1, me2, me3, me4, me5), 
                                   c(weight1, weight2, weight3, weight4, weight5)), 3)
+colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
 summary_table
 ```
 
@@ -266,6 +267,7 @@ summary_table = round(cbind(c(AIC(m2), AIC(m3), AIC(m4), AIC(m1), AIC(m0)),
                             c(delta1, delta2, delta3, delta4, delta5), 
                             c(me1, me2, me3, me4, me5), 
                             c(weight1, weight2, weight3, weight4, weight5)), 3)
+colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
 summary_table
 ```
 
@@ -363,6 +365,8 @@ summary_table = round(cbind(c(AIC(m1), AIC(m0), AIC(m2)),
                             c(delta1, delta2, delta3), 
                             c(me1, me2, me3), 
                             c(weight1, weight2, weight3)),3)
+
+colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
 summary_table
 ```
 
@@ -444,7 +448,10 @@ weight2 = me2 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(delta1, delta2), c(me1, me2), c(weight1, weight2)),3)
+summary_table = round(cbind(c(AIC(m1), AIC(m0)),
+                            c(delta1, delta2), c(me1, me2), 
+                            c(weight1, weight2)),3)
+colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
 summary_table
 ```
 
@@ -537,7 +544,6 @@ plot_diagnostic(m5, ocos)
 plot_diagnostic(m6, ocos)
 ```
 
-
 **Calculate likelihood and weights**
 
 ```{r}
@@ -568,6 +574,8 @@ summary_table = round(cbind(c(AIC(m13), AIC(m7), AIC(m6), AIC(m5)),
                             c(delta1, delta2, delta3, delta4), 
                             c(me1, me2, me3, me4), 
                             c(weight1, weight2, weight3, weight4)),3)
+
+colnames(summary_table) = c("AIC", "dAIC", "Likelihood","Weight")
 summary_table
 ```
 
@@ -741,18 +749,6 @@ anova(m2, m0, test="Chisq") # Adding Watershed_c does not improve fit
 ```
 
 ```{r}
-AIC(m2)
-AIC(m1)
-AIC(m5)
-AIC(m0)
-AIC(m3)
-AIC(m4) 
-AIC(m6)
-AIC(m7)
-AIC(m8)
-```
-
-```{r}
 tidy_regression(m2, output_col) # top model
 ```
 
@@ -803,9 +799,17 @@ weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), c(weight1, weight2, weight3, weight4, weight5)),3)
+summary_table = round(cbind(c(AIC(m2), AIC(m1), AIC(m5), AIC(m0), AIC(m3)),
+                            c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), c(weight1, weight2, weight3, weight4, weight5)),3)
+
+colnames(summary_table) = c("AIC", "dAIC", "Likelihood","Weight")
 summary_table
 ```
+
+```{r}
+formula(m3)
+```
+
 
 # Mixed Effect Modeling of Ocotillo Terminal Segments
 
