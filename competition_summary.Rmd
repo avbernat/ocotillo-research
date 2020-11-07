@@ -1,0 +1,511 @@
+---
+title: "Ocotillo Competition Summary Statistics"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+
+library(ggplot2)
+library(olsrr)
+
+dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Multivariate Modeling of Ocotillo Inter- and Intra-Competition
+
+## Reading and Cleaning the Data
+
+```{r}
+source("src/cleaning_data.R")
+source("src/regression_output.R")
+output_col = FALSE
+
+all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
+
+ocos = all_data[[2]]
+ocos_baj = ocos[ocos$Plant[1:20],]
+```
+
+## Nearest Neighbor 
+
+### All Ocos
+
+**Testing Covariates**
+
+Only significant covariates are listed below:
+
+```{r echo=FALSE}
+m1 = lm(logNN ~ Elevation_c, data=ocos)
+m2 = lm(NN_c ~ Elevation_c, data=ocos)
+m3 = lm(logNN ~ site, data=ocos)
+m4 = lm(NN_c ~ site, data=ocos)
+m5 = lm(logNN ~ Watershed_c, data=ocos)
+m6 = lm(NN_c ~ Watershed_c, data=ocos)
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m3, output_col)
+tidy_regression(m4, output_col) 
+tidy_regression(m5, output_col)
+tidy_regression(m6, output_col)
+```
+
+**Make Diagnostic Plots**
+
+```{r}
+plot_diagnostic = function(m, d) {
+  
+  d['fitted_values'] = m$fitted.values
+  d['fitted_residuals'] = m$residuals
+  
+  plot = ggplot(data = d) + geom_point(aes(x = fitted_values, y = fitted_residuals)) +
+  geom_hline(yintercept = 0) +
+  labs(title = "Plot of Fitted Residuals against Fitted Values",
+       x = "Fitted Values", y = "Fitted Residuals") 
+  
+  print(ols_test_normality(m))
+  
+  return(plot)
+}
+```
+
+When the response variable is log transformed, residuals are independent.
+
+```{r}
+plot_diagnostic(m1, ocos)
+plot_diagnostic(m2, ocos)
+#plot_diagnostic(m3, ocos) # categorical covariate
+#plot_diagnostic(m4, ocos) # categorical covariate
+plot_diagnostic(m5, ocos)
+plot_diagnostic(m5, ocos)
+```
+
+**Model Comparisons**
+
+**site, Elevation_c, Circ**
+
+```{r}
+data<-data.frame(
+  R=ocos$logNN,
+  A=ocos$site,
+  B=ocos$Elevation_c, 
+  C=ocos$Circ_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+```{r}
+cor(ocos$site, ocos$Elevation_c)
+```
+
+Elevation and site were highly correlated (R = -0.85), which leads to multicollinearity. Interactions between site and elevation were removed. This eliminates m11.
+
+```{r}
+anova(m2, m6, test='Chisq') # Adding C marginally improves fit
+anova(m6, m7, test='Chisq') # Adding A does not improve fit
+anova(m0, m2, test='Chisq') # Adding B improves fit
+```
+
+**Height, Elevation_c, Circ**
+
+```{r}
+data<-data.frame(
+  R=ocos$logNN,
+  A=ocos$Height_c,
+  B=ocos$Elevation_c, 
+  C=ocos$Circ_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+```{r}
+anova(m16, m17, test='Chisq') # Adding A*C does not improve fit
+anova(m12, m16, test='Chisq') # Adding B*C does improve fit
+```
+
+**Height, Watershed_c, Circ**
+
+```{r}
+data<-data.frame(
+  R=ocos$logNN,
+  A=ocos$Height_c,
+  B=ocos$Watershed_c, 
+  C=ocos$Circ_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+```{r}
+anova(m12, m14, test='Chisq') # Adding A*B does not improve fit
+anova(m9, m12, test='Chisq') # Adding B marginally improves fit 
+anova(m5, m9, test='Chisq') # Adding A*C improves fit
+```
+
+**Comparing best fits**
+
+```{r}
+m0 = lm(logNN ~ Height_c * Circ_c, data=ocos)
+m1 = lm(logNN ~ Height_c + Circ_c, data=ocos)
+m2 = lm(logNN ~ Height_c * Circ_c + Watershed_c , data=ocos)
+m3 = lm(logNN ~ Height_c * Circ_c  + Elevation_c * Circ_c , data = ocos)
+m4 = lm(logNN ~ Height_c * Circ_c  + Elevation_c, data = ocos)
+
+AIC(m1)
+AIC(m0)
+AIC(m2)
+AIC(m4)
+AIC(m3)
+```
+
+**Plot diagnostics**
+
+All passed. Residuals are independent.
+
+```{r}
+plot_diagnostic(m1, ocos)
+plot_diagnostic(m0, ocos)
+plot_diagnostic(m2, ocos)
+plot_diagnostic(m4, ocos)
+plot_diagnostic(m3, ocos)
+```
+
+**Calculate likelihood and weights**
+
+```{r}
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m5) - AIC(m5))
+delta2 = abs(AIC(m3) - AIC(m4))
+delta3 = abs(AIC(m3) - AIC(m2))
+delta4 = abs(AIC(m3) - AIC(m0))
+delta5 = abs(AIC(m3) - AIC(m1))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+me4 <- exp( -0.5 * delta4)
+me5 <- exp( -0.5 * delta5)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3, me4, me5))
+
+me1 / (sum) 
+me2 / (sum)
+me3 / (sum)
+me4 / (sum)
+me5 / (sum)
+```
+
+### Bajada Ocos
+
+**Testing Covariates**
+
+Only significant covariates are listed below:
+
+```{r echo=FALSE}
+m1 = lm(logNN ~ Elevation_c, data=ocos_baj)
+m2 = lm(NN_c ~ Elevation_c, data=ocos_baj)
+m3 = lm(logNN ~ NBranch_c, data=ocos_baj)
+m4 = lm(NN_c ~ NBranch_c, data=ocos_baj)
+m5 = lm(logNN ~ COMP_plant_b, data=ocos_baj)
+m6 = lm(NN_c ~ COMP_plant_b, data=ocos_baj)
+m7 = lm(logNN ~ COMP_dis_c, data=ocos_baj)
+m8 = lm(logNN ~ Circ_c, data=ocos_baj)
+m9 = lm(NN_c ~ Circ_c, data=ocos_baj)
+m10 = lm(logNN ~ Watershed_c, data=ocos_baj)
+m11 = lm(NN_c ~ Watershed_c, data=ocos_baj)
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m3, output_col)
+tidy_regression(m4, output_col)
+tidy_regression(m5, output_col)
+tidy_regression(m6, output_col)
+tidy_regression(m7, output_col) 
+tidy_regression(m8, output_col) 
+tidy_regression(m9, output_col)
+tidy_regression(m10, output_col)
+tidy_regression(m11, output_col)
+```
+
+**Plot diagnostics**
+
+All log-transformed response variables passed. Residuals were independent.
+
+```{r}
+plot_diagnostic(m1, ocos_baj)
+plot_diagnostic(m2, ocos_baj)
+plot_diagnostic(m3, ocos_baj)
+plot_diagnostic(m4, ocos_baj)
+plot_diagnostic(m5, ocos_baj)
+plot_diagnostic(m6, ocos_baj)
+plot_diagnostic(m7, ocos_baj)
+plot_diagnostic(m8, ocos_baj)
+plot_diagnostic(m9, ocos_baj)
+plot_diagnostic(m10, ocos_baj)
+plot_diagnostic(m11, ocos_baj)
+```
+**Model Comparisons**
+
+**Elevation_c, NBranch_c, COMP_dis_c**
+
+```{r}
+data<-data.frame(
+  R=ocos_baj$logNN,
+  A=ocos_baj$Elevation_c,
+  B=ocos_baj$NBranch_c,
+  C=ocos_baj$COMP_dis_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+```{r}
+anova(m13, m15, test="Chisq") # Adding A*B does not improve fit
+anova(m10, m13, test="Chisq") # Adding A does improve fit
+```
+
+```{r}
+tidy_regression(m13, output_col)
+tidy_regression(m10, output_col)
+```
+
+**Watershed_c, NBranch_c, COMP_dis_c**
+
+```{r}
+data<-data.frame(
+  R=ocos_baj$logNN,
+  A=ocos_baj$Watershed_c,
+  B=ocos_baj$NBranch_c,
+  C=ocos_baj$COMP_dis_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+```{r}
+anova(m13, m16, test='Chisq') # Adding A*C does not improve fit
+anova(m10, m13, test='Chisq') # Adding A does improve fit
+```
+
+```{r}
+tidy_regression(m13, output_col)
+tidy_regression(m10, output_col)
+```
+
+**Comparing best fits**
+
+```{r}
+m1 = lm(logNN ~  NBranch_c * COMP_dis_c + Elevation_c, data = ocos_baj)
+m2 = lm(logNN ~ NBranch_c * COMP_dis_c, data = ocos_baj)
+m3 = lm(logNN ~  NBranch_c* COMP_dis_c + Watershed_c, data = ocos_baj)
+m4 = lm(logNN ~  NBranch_c + COMP_dis_c, data = ocos_baj)
+
+AIC(m1)
+AIC(m3)
+AIC(m2)
+AIC(m4)
+```
+
+**Plot diagnostics**
+
+All passed. Residuals are independent.
+
+```{r}
+plot_diagnostic(m1, ocos_baj)
+plot_diagnostic(m2, ocos_baj)
+plot_diagnostic(m3, ocos_baj)
+plot_diagnostic(m4, ocos_baj)
+```
+
+**Calculate likelihood and weights**
+
+```{r}
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m2) - AIC(m2))
+delta2 = abs(AIC(m1) - AIC(m3))
+delta3 = abs(AIC(m1) - AIC(m2))
+delta4 = abs(AIC(m1) - AIC(m4))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+me4 <- exp( -0.5 * delta4)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3, me4))
+
+me1 / (sum) 
+me2 / (sum)
+me3 / (sum)
+me4 / (sum)
+```
+
+## Nearest (Major) Competitor
+
+### All Ocos 
+
+**Testing Covariates**
+
+Only significant covariates are listed below:
+
+```{r echo=FALSE}
+m1 = lm(logCOMP ~ Watershed_c, data=ocos)
+m2 = lm(COMP_dis_c ~ Watershed_c, data=ocos)
+m3 = lm(COMP_dis_c ~ Elevation_c, data=ocos)
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col) 
+tidy_regression(m3, output_col) 
+```
+
+**Plot diagnostics**
+
+All pass. Residuals are independent.
+
+```{r}
+plot_diagnostic(m1, ocos)
+plot_diagnostic(m2, ocos)
+plot_diagnostic(m3, ocos)
+```
+
+**Model Comparisons**
+
+Null model was the top model for all other combinations of covariates except this combination:
+
+**Watershed, Elevation**
+
+```{r}
+data<-data.frame(
+  R=ocos$logCOMP,
+  A=ocos$Watershed_c,
+  B=ocos$Elevation_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
+```
+
+```{r}
+anova(m0, m1, test="Chisq") # Adding A does improve fit
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+```
+
+```{r}
+tidy_regression(m0, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m1, output_col) 
+```
+
+**Plot diagnostics**
+
+All passed. Residuals are independent.
+
+```{r}
+plot_diagnostic(m0, ocos)
+plot_diagnostic(m2, ocos)
+plot_diagnostic(m1, ocos)
+```
+
+**Calculate likelihood and weights**
+
+```{r}
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m1) - AIC(m1))
+delta2 = abs(AIC(m1) - AIC(m2))
+delta3 = abs(AIC(m1) - AIC(m0))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3))
+
+me1 / (sum) 
+me2 / (sum)
+me3 / (sum)
+```
+
+### Bajada Ocotillos
+
+**Testing Covariates**
+
+Only significant covariates are listed below:
+
+```{r echo=FALSE}
+m1 = lm(logCOMP ~ Watershed_c, data=ocos_baj)
+m2 = lm(COMP_dis_c ~ Watershed_c, data=ocos_baj)
+m3 = lm(logCOMP ~ Elevation_c, data=ocos_baj)
+m4 = lm(COMP_dis_c ~ Elevation_c, data=ocos_baj)
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col) 
+tidy_regression(m3, output_col) 
+tidy_regression(m4, output_col) 
+```
+
+**Plot diagnostics**
+
+All pass. Residuals are independent.
+
+```{r}
+plot_diagnostic(m1, ocos_baj)
+plot_diagnostic(m2, ocos_baj)
+plot_diagnostic(m3, ocos_baj)
+plot_diagnostic(m4, ocos_baj)
+```
+
+**Model Comparisons**
+
+Null model was the top model for all other combinations of covariates except this combination:
+
+**Elevation, Watershed**
+
+```{r}
+data<-data.frame(
+  R=ocos_baj$logCOMP,
+  A=ocos_baj$Elevation_c,
+  B=ocos_baj$Watershed_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
+```
+
+```{r}
+anova(m0, m2, test="Chisq") # Adding B does improve fit
+anova(m0, m1, test="Chisq") # Adding A does improve fit
+anova(m1, m3, test="Chisq") # Adding B does not improve fit
+```
+
+```{r}
+tidy_regression(m0, output_col) 
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+```
+
+**Plot diagnostics**
+
+All passed. Residuals are independent.
+
+```{r}
+plot_diagnostic(m0, ocos_baj)
+plot_diagnostic(m1, ocos_baj)
+plot_diagnostic(m2, ocos_baj)
+```
+
+Conclusion: Same top model as the all ocotillos model comparisons.
+
