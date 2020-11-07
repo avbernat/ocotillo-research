@@ -39,6 +39,26 @@ ocos_baj = ocos[ocos$Plant[1:20],]
 str(ocos)
 ```
 
+## Diagnostic Plot Function
+
+```{r}
+plot_diagnostic = function(m, d) {
+  
+  d['fitted_values'] = m$fitted.values
+  d['fitted_residuals'] = m$residuals
+  
+  plot = ggplot(data = d) + geom_point(aes(x = fitted_values, y = fitted_residuals)) +
+  geom_hline(yintercept = 0) +
+  labs(title = "Plot of Fitted Residuals against Fitted Values",
+       x = "Fitted Values", y = "Fitted Residuals") 
+  
+  print(ols_test_normality(m))
+  
+  return(plot)
+}
+```
+
+
 ## Height 
 
 ### All Ocos
@@ -62,23 +82,6 @@ tidy_regression(m5, output_col)
 ```
 
 **Make Diagnostic Plots**
-
-```{r}
-plot_diagnostic = function(m, d) {
-  
-  d['fitted_values'] = m$fitted.values
-  d['fitted_residuals'] = m$residuals
-  
-  plot = ggplot(data = d) + geom_point(aes(x = fitted_values, y = fitted_residuals)) +
-  geom_hline(yintercept = 0) +
-  labs(title = "Plot of Fitted Residuals against Fitted Values",
-       x = "Fitted Values", y = "Fitted Residuals") 
-  
-  print(ols_test_normality(m))
-  
-  return(plot)
-}
-```
 
 When the response variable is log transformed, residuals are independent.
 
@@ -117,14 +120,6 @@ anova(m5, m7, test='Chisq') # Adding B does not improve fit
 anova(m4, m7, test='Chisq') # Adding C does improve fit
 anova(m1, m4, test='Chisq') # Adding B does not improve fit
 anova(m3, m5, test='Chisq') # Adding C does improve fit
-```
-
-```{r}
-tidy_regression(m5, output_col) # missed this regression...
-tidy_regression(m7, output_col) # also miss wrote the AIC value for this one
-tidy_regression(m4, output_col)
-tidy_regression(m1, output_col)
-tidy_regression(m3, output_col)
 ```
 
 **Plot diagnostics**
@@ -168,7 +163,11 @@ me5 / (sum)
 ```
 
 ```{r}
-ocos_baj
+tidy_regression(m5, output_col) 
+tidy_regression(m7, output_col) 
+tidy_regression(m4, output_col)
+tidy_regression(m1, output_col)
+tidy_regression(m3, output_col)
 ```
 
 ### Bajada Ocos
@@ -200,7 +199,8 @@ model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
 ```
 
 ```{r}
-anova(m0, m2, test="Chisq") # Adding A does improve fit
+anova(m0, m2, test="Chisq") # Adding B does improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
 anova(m2, m3, test="Chisq") # Adding A does not improve fit
 anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 ```
@@ -209,6 +209,7 @@ anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 tidy_regression(m2, output_col)
 tidy_regression(m3, output_col)
 tidy_regression(m4, output_col)
+tidy_regression(m1, output_col)
 tidy_regression(m0, output_col)
 ```
 
@@ -220,6 +221,7 @@ All passed. Residuals are independent.
 plot_diagnostic(m2, ocos_baj)
 plot_diagnostic(m3, ocos_baj)
 plot_diagnostic(m4, ocos_baj)
+plot_diagnostic(m1, ocos_baj)
 ```
 
 **Calculate likelihood and weights**
@@ -230,21 +232,25 @@ plot_diagnostic(m4, ocos_baj)
 delta1 = 0 # abs(AIC(m2) - AIC(m2))
 delta2 = abs(AIC(m2) - AIC(m3))
 delta3 = abs(AIC(m2) - AIC(m4))
-delta4 = abs(AIC(m2) - AIC(m0))
+delta4 = abs(AIC(m2) - AIC(m1))
+delta5 = abs(AIC(m2) - AIC(m0))
+
 
 me1 <- exp( -0.5 * delta1)
 me2 <- exp( -0.5 * delta2)
 me3 <- exp( -0.5 * delta3)
 me4 <- exp( -0.5 * delta4)
+me5 <- exp( -0.5 * delta5)
 
 # Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
 
-sum <- sum(c(me1, me2, me3, me4))
+sum <- sum(c(me1, me2, me3, me4, me5))
 
 me1 / (sum) 
 me2 / (sum)
 me3 / (sum)
 me4 / (sum)
+me5 / (sum)
 ```
 
 Only factor that largely influences ocotillo height is terminal segment length.
@@ -260,7 +266,7 @@ Only significant covariates are listed below:
 ```{r echo=FALSE}
 m1 = lm(Circ_c ~ NBranch_c, data=ocos)
 m2 = lm(logCirc ~ NBranch_c, data=ocos)
-m3 = lm(logCirc ~ X1m_Num4, data=ocos) # AB: although significant is this a meaningful number?
+m3 = lm(logCirc ~ X1m_Num4, data=ocos) # Although significant, thi is not a meaningful number in this context.
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col) 
@@ -279,19 +285,6 @@ plot_diagnostic(m3, ocos)
 **Model Comparisons**
 
 Null model was the top model for all other combinations of covariates except this combination:
-
-**NBranches, site, X1m_Num4**
-
-```{r}
-data<-data.frame(
-  R=ocos$logCirc,
-  A=ocos$NBranch_c,
-  B=ocos$site, 
-  C=ocos$X1m_Num4) 
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
-```
 
 **NBranches, site**
 
