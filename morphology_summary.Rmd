@@ -16,7 +16,8 @@ library(factoextra)
 library(readr)
 library(corrplot)
 
-dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
+#dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
+dir = "/Users/allegrasteenson/Desktop/ocotillo_research/"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
