@@ -11,13 +11,17 @@ rm(list=ls())
 library(ggplot2)
 library(olsrr)
 
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+
 library(FactoMineR)
 library(factoextra)
 library(readr)
 library(corrplot)
 
-#dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
-dir = "/Users/allegrasteenson/Desktop/ocotillo_research/"
+dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
+#dir = "/Users/allegrasteenson/Desktop/ocotillo_research/"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -113,7 +117,7 @@ model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 cor(ocos$site, ocos$Elevation_c)
 ```
 
-Elevation and site were highly correlated (R = -0.85), which leads to multicollinearity. Interactions between site and elevation were removed. This eliminates m11 and m15 as the top models
+Elevation and site were highly correlated (R = -0.85), which led to multicollinearity. In turn, we removed any interactions between elevation and site in the model comparison process in order to minimize relationships that were spurious. This eliminated m11 and m15 as the top models.
 
 ```{r}
 anova(m7, m13, test='Chisq') # adding B*C does not improve fit
@@ -168,8 +172,9 @@ summary_table = round(cbind(c(AIC(m5), AIC(m7), AIC(m4), AIC(m1), AIC(m3)),
                                   c(delta1, delta2, delta3, delta4, delta5), 
                                   c(me1, me2, me3, me4, me5), 
                                   c(weight1, weight2, weight3, weight4, weight5)), 3)
+
 colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-summary_table
+cbind(c(str(m5$call), str(m7$call), str(m4$call), str(m1$call), str(m3$call)), summary_table)
 ```
 
 ```{r}
@@ -268,8 +273,9 @@ summary_table = round(cbind(c(AIC(m2), AIC(m3), AIC(m4), AIC(m1), AIC(m0)),
                             c(delta1, delta2, delta3, delta4, delta5), 
                             c(me1, me2, me3, me4, me5), 
                             c(weight1, weight2, weight3, weight4, weight5)), 3)
+
 colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-summary_table
+cbind(c(str(m2$call), str(m3$call), str(m4$call), str(m1$call), str(m0$call)), summary_table)
 ```
 
 Only factor that largely influences ocotillo height is terminal segment length.
@@ -368,7 +374,7 @@ summary_table = round(cbind(c(AIC(m1), AIC(m0), AIC(m2)),
                             c(weight1, weight2, weight3)),3)
 
 colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-summary_table
+cbind(c(str(m1$call), str(m0$call), str(m2$call)), summary_table)
 ```
 
 ### Bajada Ocotillos
@@ -453,7 +459,7 @@ summary_table = round(cbind(c(AIC(m1), AIC(m0)),
                             c(delta1, delta2), c(me1, me2), 
                             c(weight1, weight2)),3)
 colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-summary_table
+cbind(c(str(m1$call), str(m0$call)), summary_table)
 ```
 
 ## Number of Branches
@@ -577,8 +583,10 @@ summary_table = round(cbind(c(AIC(m13), AIC(m7), AIC(m6), AIC(m5)),
                             c(weight1, weight2, weight3, weight4)),3)
 
 colnames(summary_table) = c("AIC", "dAIC", "Likelihood","Weight")
-summary_table
+cbind(c(str(m13$call), str(m7$call), str(m6$call), str(m5$call)),
+      summary_table)
 ```
+
 
 ### Bajada Ocos
 
@@ -801,16 +809,12 @@ weight5 = me5 / (sum)
 
 ```{r}
 summary_table = round(cbind(c(AIC(m2), AIC(m1), AIC(m5), AIC(m0), AIC(m3)),
-                            c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), c(weight1, weight2, weight3, weight4, weight5)),3)
+                            c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), 
+                            c(weight1, weight2, weight3, weight4, weight5)),3)
 
 colnames(summary_table) = c("AIC", "dAIC", "Likelihood","Weight")
-summary_table
+cbind(c(str(m2$call), str(m1$call), str(m5$call), str(m0$call), str(m3$call)), summary_table)
 ```
-
-```{r}
-formula(m3)
-```
-
 
 # Mixed Effect Modeling of Ocotillo Terminal Segments
 
@@ -831,7 +835,6 @@ segs = all_data[[1]][[3]]
 
 segs <- segs[!is.na(segs$Length_c),]
 str(segs)
-segs
 ```
 
 **Testing Covariates**
@@ -900,7 +903,7 @@ data<-data.frame(
 data <- data[complete.cases(data),]
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian lmer 2 RF-3FF.R")
+#model_comparisonsAIC("src/generic models-gaussian lmer 2 RF-3FF.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
 ```
 
@@ -957,11 +960,99 @@ weight3 = me3 / (sum)
 weight4 = me4 / (sum)
 ```
 
+data<-data.frame(
+  R=segs$Length_c,
+  A=segs$Height_c, 
+  B=segs$T1m_NumNonshrub, 
+  C=segs$R1m_shrub2non,
+  X=segs$Tree,
+  Y=segs$seg_num)
+  
 ```{r}
-summary_table = round(cbind(c(delta1, delta2, delta3, delta4), c(me1, me2, me3, me4), c(weight1, weight2, weight3, weight4)),3)
-summary_table
+summary_table = round(cbind(c(AIC(m4), AIC(m1), AIC(m5), AIC(m0)),
+                            c(delta1, delta2, delta3, delta4), 
+                            c(me1, me2, me3, me4), 
+                            c(weight1, weight2, weight3, weight4)),3)
+
+colnames(summary_table) = c("AIC", "dAIC", "Likelihood","Weight")
+cbind(c(str(formula(m4)), str(formula(m1)), str(formula(m5)), str(formula(m0))), summary_table)
 ```
 
+## Kruskal-Wallis 
+
+**Histogram**
+
+```{r fig.width=8, fig.height=3.5}
+par(mfrow=c(1,2))
+hist(seg_organ$Length, main="", xlab= "Terminal Segment Length (cm)", cex.lab=1.6, cex.axis=1.4, xlim=c(0,80), ylim=c(0,500))
+title("(a)", adj = 0.05, line = 0, cex.main=1.5)
+```
+
+
+```{r}
+kruskal.test(Length ~ COMP_plant_type, data = seg_organ)
+table <- pairwise.wilcox.test(seg_organ$Length, seg_organ$COMP_id,
+                 p.adjust.method = "BH")
+
+model1 <- kruskal.test(Length ~ COMP_plant_type, data = seg_organ)
+model2 <- kruskal.test(Length ~ COMP_id, data = seg_organ)
+
+table$p.value
+
+summary(aov(seg_organ$Length ~ seg_organ$COMP_id))
+competitor <- seg_organ$COMP_id
+model = aov(seg_organ$Length ~ competitor)
+tukey <- TukeyHSD(x=model, conf.level=0.95)
+par(mar = c(4, 14, 4, 1) , cex.axis=.7)
+plot(tukey , las=1 , col="brown")
+```
+**By Competitor Species**
+
+```{r fig.height=4, fig.width=5.3}
+
+data = data.frame(Segment_Length=seg_organ$Length, Competitor_Species =seg_organ$COMP_id, COMP_plant_type = seg_organ$COMP_plant_type)
+pwc <- seg_organ %>% 
+  dunn_test(Length ~ COMP_id, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "group")
+
+res.kruskal <- seg_organ %>% kruskal_test(Length ~ COMP_id)
+res.kruskal
+
+ggplot(seg_organ, aes(COMP_id,Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE), 
+    caption = get_pwc_label(pwc)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Major Nearest Shrub Competitor Species") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
+
+**By Competitor Type**
+
+```{r fig.width=4, fig.height=3.5}
+pwc <- seg_organ %>% 
+  dunn_test(Length ~ COMP_plant_type, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "COMP_plant_type")
+
+res.kruskal <- seg_organ %>% kruskal_test(Length ~ COMP_plant_type)
+res.kruskal
+
+ggplot(seg_organ, aes(COMP_plant_type,Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Nearest Major Competitor Species Type") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
 
 ## Principal Component Analysis (PCA)
 
@@ -969,6 +1060,7 @@ summary_table
 
 ```{r}
 growthForm <- read.csv("data/growthForm.csv", row.names = 1)
+growthForm <- growthForm[1:27,] # need to fix this
 ```
 
 **Investigating Variables**
@@ -997,8 +1089,6 @@ GFdim$Dim.2
 ```
 
 **Plot by Competitor**
-
-- Ask Acacia about this one:
 
 ```{r}
 #Plot by competitor
