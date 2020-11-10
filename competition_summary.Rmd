@@ -537,7 +537,3 @@ plot_diagnostic(m2, ocos_baj)
 
 Conclusion: Same top model as the all ocotillos model comparisons.
 
-```{r}
-summary(m1)
-```
-
