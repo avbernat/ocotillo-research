@@ -29,6 +29,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Multivariate Modeling of Ocotillo Morphology
 
+Analyses below are multivariate models of Fouquieria splendens morphology for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Ocotillos located on the bajada were encoded with site = 0 while ocotillos on the plain were encoded with site = 1. Competitor type is split between two types – shrub and nonshrub – where nonshrub = 0 and shrub = 1. 
+
 ## Reading and Cleaning the Data
 
 ```{r}
@@ -817,6 +819,8 @@ cbind(c(str(m2$call), str(m1$call), str(m5$call), str(m0$call), str(m3$call)), s
 ```
 
 # Mixed Effect Modeling of Ocotillo Terminal Segments
+
+Analyses below are mixed effect models of Fouquieria splendens terminal segment length for all individuals located on both a bajada and a plain in Organ Pipe National Monument, Arizona. Terminal segment length denotes the length of each of the last five, topmost branches of the ten branches measured per ocotillo. The best fit model is the model with the lowest AIC value. The rest of the models were ordered by their ascending AIC values. No subsets of the data were used in these analyses.
 
 ## Reading and Cleaning the Data
 
