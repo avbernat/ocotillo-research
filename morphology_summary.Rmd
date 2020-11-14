@@ -10,6 +10,7 @@ rm(list=ls())
 
 library(ggplot2)
 library(olsrr)
+library(lme4)
 
 library(tidyverse)
 library(ggpubr)
@@ -21,7 +22,7 @@ library(readr)
 library(corrplot)
 
 dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
-#dir = "/Users/allegrasteenson/Desktop/ocotillo_research/"
+#dir = "/Users/allegrasteenson/Desktop/ocotillo-research/"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -964,14 +965,6 @@ weight3 = me3 / (sum)
 weight4 = me4 / (sum)
 ```
 
-data<-data.frame(
-  R=segs$Length_c,
-  A=segs$Height_c, 
-  B=segs$T1m_NumNonshrub, 
-  C=segs$R1m_shrub2non,
-  X=segs$Tree,
-  Y=segs$seg_num)
-  
 ```{r}
 summary_table = round(cbind(c(AIC(m4), AIC(m1), AIC(m5), AIC(m0)),
                             c(delta1, delta2, delta3, delta4), 
