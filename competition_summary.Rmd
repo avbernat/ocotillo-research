@@ -20,6 +20,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Multivariate Modeling of Ocotillo Inter- and Intra-Competition
 
+Analyses below are multivariate models of distance to the nearest neighboring Fouquieria splendens and nearest competitor for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Competitor type is split between two types – shrub and nonshrub – where nonshrub = 0 and shrub = 1. 
+
 ## Reading and Cleaning the Data
 
 ```{r}
@@ -106,7 +108,7 @@ model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 cor(ocos$site, ocos$Elevation_c)
 ```
 
-Elevation and site were highly correlated (R = -0.85), which leads to multicollinearity. Interactions between site and elevation were removed. This eliminates m11.
+Elevation and site were highly correlated (R = -0.85), which leads to multicollinearity. In turn, interactions between site and elevation were removed. This eliminated m11.
 
 ```{r}
 anova(m2, m6, test='Chisq') # Adding C marginally improves fit
@@ -200,11 +202,21 @@ me5 <- exp( -0.5 * delta5)
 
 sum <- sum(c(me1, me2, me3, me4, me5))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
-me4 / (sum)
-me5 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
+weight5 = me5 / (sum)
+```
+
+```{r}
+summary_table = round(cbind(c(AIC(m3), AIC(m4), AIC(m2), AIC(m0), AIC(m1)),
+                                  c(delta1, delta2, delta3, delta4, delta5), 
+                                  c(me1, me2, me3, me4, me5), 
+                                  c(weight1, weight2, weight3, weight4, weight5)), 3)
+
+colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
+cbind(c(str(m3$call), str(m4$call), str(m2$call), str(m0$call), str(m1$call)), summary_table)
 ```
 
 ### Bajada Ocos
@@ -311,11 +323,6 @@ m1 = lm(logNN ~  NBranch_c * COMP_dis_c + Elevation_c, data = ocos_baj)
 m2 = lm(logNN ~ NBranch_c * COMP_dis_c, data = ocos_baj)
 m3 = lm(logNN ~  NBranch_c* COMP_dis_c + Watershed_c, data = ocos_baj)
 m4 = lm(logNN ~  NBranch_c + COMP_dis_c, data = ocos_baj)
-
-AIC(m1)
-AIC(m3)
-AIC(m2)
-AIC(m4)
 ```
 
 **Plot diagnostics**
@@ -348,10 +355,23 @@ me4 <- exp( -0.5 * delta4)
 
 sum <- sum(c(me1, me2, me3, me4))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
-me4 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
+```
+
+```{r}
+summary_table = round(cbind(c(AIC(m1), AIC(m3), AIC(m2), AIC(m4)),
+                                  c(delta1, delta2, delta3, delta4), 
+                                  c(me1, me2, me3, me4), 
+                                  c(weight1, weight2, weight3, weight4)), 3)
+
+colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
+cbind(c(str(m1$call), str(m3$call), str(m2$call), str(m4$call)), summary_table)
+```
+```{r}
+summary(m1)
 ```
 
 ## Nearest (Major) Competitor
@@ -436,9 +456,19 @@ me3 <- exp( -0.5 * delta3)
 
 sum <- sum(c(me1, me2, me3))
 
-me1 / (sum) 
-me2 / (sum)
-me3 / (sum)
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+```
+
+```{r}
+summary_table = round(cbind(c(AIC(m1), AIC(m2), AIC(m0)),
+                                  c(delta1, delta2, delta3), 
+                                  c(me1, me2, me3), 
+                                  c(weight1, weight2, weight3)), 3)
+
+colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
+cbind(c(str(m1$call), str(m2$call), str(m0$call)), summary_table)
 ```
 
 ### Bajada Ocotillos
@@ -479,8 +509,8 @@ Null model was the top model for all other combinations of covariates except thi
 ```{r}
 data<-data.frame(
   R=ocos_baj$logCOMP,
-  A=ocos_baj$Elevation_c,
-  B=ocos_baj$Watershed_c) 
+  A=ocos_baj$Watershed_c,
+  B=ocos_baj$Elevation_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
