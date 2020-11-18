@@ -35,6 +35,58 @@ ocos = all_data[[2]]
 ocos_baj = ocos[ocos$Plant[1:20],]
 ```
 
+## Functions
+
+```{r}
+### Diagnostic Plot Function
+
+plot_diagnostic = function(m, d) {
+  
+  d['fitted_values'] = m$fitted.values
+  d['fitted_residuals'] = m$residuals
+  
+  plot = ggplot(data = d) + geom_point(aes(x = fitted_values, y = fitted_residuals)) +
+  geom_hline(yintercept = 0) +
+  labs(title = "Plot of Fitted Residuals against Fitted Values",
+       x = "Fitted Values", y = "Fitted Residuals") 
+  
+  print(ols_test_normality(m))
+  
+  return(plot)
+}
+```
+
+```{r}
+### Renaming Regression Formulas Function
+
+rename_regformula = function (eqs, response_var, predA, predB, predC, predD) {
+  # eqs:              list of linear regression formals as characters
+  # response_var:     response variable as a character
+  # predA:            predictor variable A as a character
+  # predB:            predictor variable B as a character
+  # predC:            predictor variable C as a character
+  # predD:            predictor variable D as a character
+  for (i in 1:length(eqs)) {
+  if (grepl(" A", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("A", predA, eqs[i])
+  }
+  if (grepl(" B", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("B", predB, eqs[i])
+  }
+  if (grepl(" C", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("C", predC, eqs[i])
+  }
+  if (grepl(" D", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("D", predD, eqs[i])
+  }
+  if (grepl( "R", eqs[i], fixed = TRUE)) {
+    eqs[i] = gsub("R", response_var, eqs[i])
+  }
+  }
+  return(eqs)
+}
+```
+
 ## Nearest Neighbor 
 
 ### All Ocos
@@ -57,25 +109,6 @@ tidy_regression(m3, output_col)
 tidy_regression(m4, output_col) 
 tidy_regression(m5, output_col)
 tidy_regression(m6, output_col)
-```
-
-**Make Diagnostic Plots**
-
-```{r}
-plot_diagnostic = function(m, d) {
-  
-  d['fitted_values'] = m$fitted.values
-  d['fitted_residuals'] = m$residuals
-  
-  plot = ggplot(data = d) + geom_point(aes(x = fitted_values, y = fitted_residuals)) +
-  geom_hline(yintercept = 0) +
-  labs(title = "Plot of Fitted Residuals against Fitted Values",
-       x = "Fitted Values", y = "Fitted Residuals") 
-  
-  print(ols_test_normality(m))
-  
-  return(plot)
-}
 ```
 
 When the response variable is log transformed, residuals are independent.
@@ -210,13 +243,25 @@ weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(AIC(m3), AIC(m4), AIC(m2), AIC(m0), AIC(m1)),
+summary_tableN = round(cbind(c(AIC(m3), AIC(m4), AIC(m2), AIC(m0), AIC(m1)),
                                   c(delta1, delta2, delta3, delta4, delta5), 
                                   c(me1, me2, me3, me4, me5), 
                                   c(weight1, weight2, weight3, weight4, weight5)), 3)
 
-colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-cbind(c(str(m3$call), str(m4$call), str(m2$call), str(m0$call), str(m1$call)), summary_table)
+eq1 = paste(m3$call)[2]
+eq2 = paste(m4$call)[2]
+eq3 = paste(m2$call)[2]
+eq4 = paste(m0$call)[2]
+eq5 = paste(m1$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4, eq5)
+
+summary_tableN = cbind(equations, summary_tableN)
+colnames(summary_tableN) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableN
 ```
 
 ### Bajada Ocos
@@ -362,16 +407,24 @@ weight4 = me4 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(AIC(m1), AIC(m3), AIC(m2), AIC(m4)),
+summary_tableN.B = round(cbind(c(AIC(m1), AIC(m3), AIC(m2), AIC(m4)),
                                   c(delta1, delta2, delta3, delta4), 
                                   c(me1, me2, me3, me4), 
                                   c(weight1, weight2, weight3, weight4)), 3)
 
-colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-cbind(c(str(m1$call), str(m3$call), str(m2$call), str(m4$call)), summary_table)
+eq1 = paste(m1$call)[2]
+eq2 = paste(m3$call)[2]
+eq3 = paste(m2$call)[2]
+eq4 = paste(m4$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4)
+
+summary_tableN.B = cbind(equations, summary_tableN.B)
+colnames(summary_tableN.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
+
 ```{r}
-summary(m1)
+summary_tableN.B
 ```
 
 ## Nearest (Major) Competitor
@@ -461,14 +514,30 @@ weight2 = me2 / (sum)
 weight3 = me3 / (sum)
 ```
 
+data<-data.frame(
+  R=ocos$logCOMP,
+  A=ocos$Watershed_c,
+  B=ocos$Elevation_c) 
+  
 ```{r}
-summary_table = round(cbind(c(AIC(m1), AIC(m2), AIC(m0)),
+summary_tableC = round(cbind(c(AIC(m1), AIC(m2), AIC(m0)),
                                   c(delta1, delta2, delta3), 
                                   c(me1, me2, me3), 
                                   c(weight1, weight2, weight3)), 3)
 
-colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-cbind(c(str(m1$call), str(m2$call), str(m0$call)), summary_table)
+eq1 = paste(m1$call)[2]
+eq2 = paste(m2$call)[2]
+eq3 = paste(m0$call)[2]
+
+equations = c(eq1, eq2, eq3)
+equations = rename_regformula(equations, "logCOMP", "Watershed_c", "Elevation_c")
+
+summary_tableC = cbind(equations, summary_tableC)
+colnames(summary_tableC) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableC
 ```
 
 ### Bajada Ocotillos
@@ -539,4 +608,22 @@ plot_diagnostic(m2, ocos_baj)
 ```
 
 Conclusion: Same top model as the all ocotillos model comparisons.
+
+## Summary Tables to CSV
+
+```{r}
+datasets = c("all", "all", "all", "all", "all", 
+             "bajada", "bajada", "bajada", "bajada", 
+             "all", "all", "all")
+
+full_table = rbind(summary_tableN, summary_tableN.B, 
+                   summary_tableC)
+
+full_table = cbind(datasets, full_table)
+colnames(full_table) = c("Ocotillos", "Equation", "AIC","dAIC", "Likelihood","Weight")
+
+full_table
+write.csv(full_table,'comp_regressions.csv', row.names=FALSE)
+```
+
 

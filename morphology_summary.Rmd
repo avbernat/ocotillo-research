@@ -28,6 +28,7 @@ setwd(dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 # Multivariate Modeling of Ocotillo Morphology
 
 Analyses below are multivariate models of Fouquieria splendens morphology for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Ocotillos located on the bajada were encoded with site = 0 while ocotillos on the plain were encoded with site = 1. Competitor type is split between two types – shrub and nonshrub – where nonshrub = 0 and shrub = 1. 
@@ -47,9 +48,11 @@ ocos_baj = ocos[ocos$Plant[1:20],]
 str(ocos)
 ```
 
-## Diagnostic Plot Function
+## Functions
 
 ```{r}
+### Diagnostic Plot Function
+
 plot_diagnostic = function(m, d) {
   
   d['fitted_values'] = m$fitted.values
@@ -63,6 +66,37 @@ plot_diagnostic = function(m, d) {
   print(ols_test_normality(m))
   
   return(plot)
+}
+```
+
+```{r}
+### Renaming Regression Formulas Function
+
+rename_regformula = function (eqs, response_var, predA, predB, predC, predD) {
+  # eqs:              list of linear regression formals as characters
+  # response_var:     response variable as a character
+  # predA:            predictor variable A as a character
+  # predB:            predictor variable B as a character
+  # predC:            predictor variable C as a character
+  # predD:            predictor variable D as a character
+  for (i in 1:length(eqs)) {
+  if (grepl(" A", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("A", predA, eqs[i])
+  }
+  if (grepl(" B", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("B", predB, eqs[i])
+  }
+  if (grepl(" C", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("C", predC, eqs[i])
+  }
+  if (grepl(" D", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("D", predD, eqs[i])
+  }
+  if (grepl( "R", eqs[i], fixed = TRUE)) {
+    eqs[i] = gsub("R", response_var, eqs[i])
+  }
+  }
+  return(eqs)
 }
 ```
 
@@ -171,13 +205,26 @@ weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(AIC(m5), AIC(m7), AIC(m4), AIC(m1), AIC(m3)),
+summary_tableH = round(cbind(c(AIC(m5), AIC(m7), AIC(m4), AIC(m1), AIC(m3)),
                                   c(delta1, delta2, delta3, delta4, delta5), 
                                   c(me1, me2, me3, me4, me5), 
                                   c(weight1, weight2, weight3, weight4, weight5)), 3)
 
-colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-cbind(c(str(m5$call), str(m7$call), str(m4$call), str(m1$call), str(m3$call)), summary_table)
+eq1 = paste(m5$call)[2]
+eq2 = paste(m7$call)[2]
+eq3 = paste(m4$call)[2]
+eq4 = paste(m1$call)[2]
+eq5 = paste(m3$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4, eq5)
+equations = rename_regformula(equations, "logHeight", "site", "Elevation_c", "TSeq_c")
+
+summary_tableH = cbind(equations, summary_tableH)
+colnames(summary_tableH) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableH
 ```
 
 ```{r}
@@ -272,15 +319,27 @@ weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(AIC(m2), AIC(m3), AIC(m4), AIC(m1), AIC(m0)),
+summary_tableH.B = round(cbind(c(AIC(m2), AIC(m3), AIC(m4), AIC(m1), AIC(m0)),
                             c(delta1, delta2, delta3, delta4, delta5), 
                             c(me1, me2, me3, me4, me5), 
                             c(weight1, weight2, weight3, weight4, weight5)), 3)
 
-colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-cbind(c(str(m2$call), str(m3$call), str(m4$call), str(m1$call), str(m0$call)), summary_table)
+eq1 = paste(m2$call)[2]
+eq2 = paste(m3$call)[2]
+eq3 = paste(m4$call)[2]
+eq4 = paste(m1$call)[2]
+eq5 = paste(m0$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4, eq5)
+equations = rename_regformula(equations, "logHeight", "site", "Elevation_c", "TSeq_c")
+
+summary_tableH.B = cbind(equations, summary_tableH.B)
+colnames(summary_tableH.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
+```{r}
+summary_tableH.B
+```
 Only factor that largely influences ocotillo height is terminal segment length.
 
 ## Circumference
@@ -371,13 +430,24 @@ weight3 = me3 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(AIC(m1), AIC(m0), AIC(m2)),
+summary_tableC = round(cbind(c(AIC(m1), AIC(m0), AIC(m2)),
                             c(delta1, delta2, delta3), 
                             c(me1, me2, me3), 
                             c(weight1, weight2, weight3)),3)
 
-colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-cbind(c(str(m1$call), str(m0$call), str(m2$call)), summary_table)
+eq1 = paste(m1$call)[2]
+eq2 = paste(m0$call)[2]
+eq3 = paste(m2$call)[2]
+
+equations = c(eq1, eq2, eq3)
+equations = rename_regformula(equations, "logCirc", "NBranch_c", "site")
+
+summary_tableC = cbind(equations, summary_tableC)
+colnames(summary_tableC) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableC
 ```
 
 ### Bajada Ocotillos
@@ -456,13 +526,24 @@ sum <- sum(c(me1, me2, me3))
 weight1 = me1 / (sum) 
 weight2 = me2 / (sum)
 ```
-
+  
 ```{r}
-summary_table = round(cbind(c(AIC(m1), AIC(m0)),
+summary_tableC.B = round(cbind(c(AIC(m1), AIC(m0)),
                             c(delta1, delta2), c(me1, me2), 
                             c(weight1, weight2)),3)
-colnames(summary_table) = c("AIC","dAIC", "Likelihood","Weight")
-cbind(c(str(m1$call), str(m0$call)), summary_table)
+
+eq1 = paste(m1$call)[2]
+eq2 = paste(m0$call)[2]
+
+equations = c(eq1, eq2)
+equations = rename_regformula(equations, "logCirc", "NBranch_c", "X1m_Num4")
+
+summary_tableC.B = cbind(equations, summary_tableC.B)
+colnames(summary_tableC.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableC.B
 ```
 
 ## Number of Branches
@@ -580,14 +661,25 @@ weight4 = me4 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(AIC(m13), AIC(m7), AIC(m6), AIC(m5)),
+summary_tableB = round(cbind(c(AIC(m13), AIC(m7), AIC(m6), AIC(m5)),
                             c(delta1, delta2, delta3, delta4), 
                             c(me1, me2, me3, me4), 
                             c(weight1, weight2, weight3, weight4)),3)
 
-colnames(summary_table) = c("AIC", "dAIC", "Likelihood","Weight")
-cbind(c(str(m13$call), str(m7$call), str(m6$call), str(m5$call)),
-      summary_table)
+eq1 = paste(m13$call)[2]
+eq2 = paste(m7$call)[2]
+eq3 = paste(m6$call)[2]
+eq4 = paste(m5$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4)
+equations = rename_regformula(equations, "logNB", "Circ_c", "COMP_plant_b", "COMP_dis_c", "Watershed_c")
+
+summary_tableB = cbind(equations, summary_tableB)
+colnames(summary_tableB) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableB
 ```
 
 
@@ -811,12 +903,25 @@ weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_table = round(cbind(c(AIC(m2), AIC(m1), AIC(m5), AIC(m0), AIC(m3)),
-                            c(delta1, delta2, delta3, delta4, delta5), c(me1, me2, me3, me4, me5), 
+summary_tableB.B = round(cbind(c(AIC(m2), AIC(m1), AIC(m5), AIC(m0), AIC(m3)),
+                            c(delta1, delta2, delta3, delta4, delta5), 
+                            c(me1, me2, me3, me4, me5), 
                             c(weight1, weight2, weight3, weight4, weight5)),3)
 
-colnames(summary_table) = c("AIC", "dAIC", "Likelihood","Weight")
-cbind(c(str(m2$call), str(m1$call), str(m5$call), str(m0$call), str(m3$call)), summary_table)
+eq1 = paste(m2$call)[2]
+eq2 = paste(m1$call)[2]
+eq3 = paste(m5$call)[2]
+eq4 = paste(m0$call)[2]
+eq5 = paste(m3$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4, eq5)
+
+summary_tableB.B = cbind(equations, summary_tableB.B)
+colnames(summary_tableB.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableB.B
 ```
 
 # Mixed Effect Modeling of Ocotillo Terminal Segments
@@ -826,8 +931,6 @@ Analyses below are mixed effect models of Fouquieria splendens terminal segment 
 ## Reading and Cleaning the Data
 
 ```{r}
-rm(list=ls())
-
 source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
@@ -840,6 +943,60 @@ segs = all_data[[1]][[3]]
 
 segs <- segs[!is.na(segs$Length_c),]
 str(segs)
+```
+
+## Functions
+
+```{r}
+### Diagnostic Plot Function
+
+plot_diagnostic = function(m, d) {
+  
+  d['fitted_values'] = fitted(m)
+  d['fitted_residuals'] = residuals(m)
+  
+  plot = ggplot(data = d) + geom_point(aes(x = fitted_values, y = fitted_residuals)) +
+  geom_hline(yintercept = 0) +
+  labs(title = "Plot of Fitted Residuals against Fitted Values",
+       x = "Fitted Values", y = "Fitted Residuals") 
+  
+  return(plot)
+}
+```
+
+```{r}
+## Renaming Regression Formulas Function
+
+rename_regformulaME = function (eqs, response_var, predA, predB, predC, randX, randY) {
+  # eqs:              list of linear regression formals as characters
+  # response_var:     response variable as a character
+  # predA:            predictor variable A as a character
+  # predB:            predictor variable B as a character
+  # predC:            predictor variable C as a character
+  # randX:            random variable X as a character
+  # randY:            random variable Y as a character
+  for (i in 1:length(eqs)) {
+  if (grepl(" A", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("A", predA, eqs[i])
+  }
+  if (grepl(" B", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("B", predB, eqs[i])
+  }
+  if (grepl(" C", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("C", predC, eqs[i])
+  }
+  if (grepl("X", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("X", randX, eqs[i])
+  }
+    if (grepl("Y", eqs[i], fixed = TRUE)) {
+    eqs[i] =  gsub("Y", randY, eqs[i])
+  }
+  if (grepl( "R", eqs[i], fixed = TRUE)) {
+    eqs[i] = gsub("R", response_var, eqs[i])
+  }
+  }
+  return(eqs)
+}
 ```
 
 **Testing Covariates**
@@ -860,23 +1017,6 @@ tidy_regression(m2, output_col)
 tidy_regression(m3, output_col)
 ```
 
-**Make Diagnostic Plots**
-
-```{r}
-plot_diagnostic = function(m, d) {
-  
-  d['fitted_values'] = fitted(m)
-  d['fitted_residuals'] = residuals(m)
-  
-  plot = ggplot(data = d) + geom_point(aes(x = fitted_values, y = fitted_residuals)) +
-  geom_hline(yintercept = 0) +
-  labs(title = "Plot of Fitted Residuals against Fitted Values",
-       x = "Fitted Values", y = "Fitted Residuals") 
-  
-  return(plot)
-}
-```
-
 **Plot diagnostics**
 
 All passed. Residuals are independent.
@@ -889,7 +1029,6 @@ plot_diagnostic(m2, segs)
 plot_diagnostic(m3, temp_segs)
 plot_diagnostic(m4, temp_segs)
 ```
-
 
 **Model Comparisons**
 
@@ -965,14 +1104,56 @@ weight3 = me3 / (sum)
 weight4 = me4 / (sum)
 ```
 
+
 ```{r}
-summary_table = round(cbind(c(AIC(m4), AIC(m1), AIC(m5), AIC(m0)),
+summary_tableS = round(cbind(c(AIC(m4), AIC(m1), AIC(m5), AIC(m0)),
                             c(delta1, delta2, delta3, delta4), 
                             c(me1, me2, me3, me4), 
                             c(weight1, weight2, weight3, weight4)),3)
 
-colnames(summary_table) = c("AIC", "dAIC", "Likelihood","Weight")
-cbind(c(str(formula(m4)), str(formula(m1)), str(formula(m5)), str(formula(m0))), summary_table)
+eq1 = c(paste(formula(m4))[2], paste(formula(m4))[1], paste(formula(m4))[3]) %>%
+ paste(collapse=' ')
+eq2 = c(paste(formula(m1))[2], paste(formula(m1))[1], paste(formula(m1))[3]) %>%
+ paste(collapse=' ')
+eq3 = c(paste(formula(m5))[2], paste(formula(m5))[1], paste(formula(m5))[3]) %>%
+ paste(collapse=' ')
+eq4 = c(paste(formula(m0))[2], paste(formula(m0))[1], paste(formula(m0))[3]) %>%
+ paste(collapse=' ')
+
+equations = c(eq1, eq2, eq3, eq4)
+equations = rename_regformulaME(equations, "Length_c", "Height_c", "T1m_NumNonshrub", "1m_shrub2non", "Tree", "seg_num")
+
+summary_tableS = cbind(equations, summary_tableS)
+colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableS
+```
+
+## Summary Tables to CSV
+
+```{r}
+datasets = c("all", "all", "all", "all",
+             "bajada", "bajada", "bajada", "bajada", "bajada", 
+             "all", "all", "all",
+             "bajada", "bajada",
+             "all", "all", "all", "all", "all",
+             "bajada", "bajada", "bajada", "bajada", "bajada", 
+             "all", "all", "all", "all")
+```
+
+```{r}
+full_table = rbind(summary_tableB, summary_tableB.B, 
+                   summary_tableC, summary_tableC.B,
+                   summary_tableH, summary_tableH.B,
+                   summary_tableS)
+
+full_table = cbind(datasets, full_table)
+colnames(full_table) = c("Ocotillos", "Equation", "AIC","dAIC", "Likelihood","Weight")
+full_table
+
+write.csv(full_table,'morph_regressions.csv', row.names=FALSE)
 ```
 
 ## Kruskal-Wallis 
