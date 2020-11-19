@@ -1,0 +1,420 @@
+---
+title: "Graphs"
+author: "Anastasia Bernat"
+date: "11/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+
+library(rethinking)
+library(dplyr)
+
+dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
+#dir = "/Users/allegrasteenson/Desktop/ocotillo-research/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reading and Cleaning the Data
+
+```{r}
+source("src/cleaning_data.R")
+source("src/regression_output.R")
+output_col = FALSE
+
+all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
+
+ocos = all_data[[2]]
+ocos_baj = ocos[ocos$Plant[1:20],]
+
+seg_baj = all_data[[1]][[1]]
+seg_organ = all_data[[1]][[2]] 
+segs = all_data[[1]][[3]]
+
+segs <- segs[!is.na(segs$Length_c),]
+```
+
+## Shared Plotting Parameters
+
+```{r}
+c1 = 1.2 * 1.2
+c2 = 1.3 * 1.2
+c3 = 1.5 * 1.2
+c4 = 1.1 * 1.2
+```
+
+## Height
+
+```{r fig.width=2.1, fig.height=5.18}
+
+par(mfrow=c(3,1))
+
+###### Plot A
+
+d = ocos
+x=d[,"Elevation_c"]
+y=d[,"logHeight"] 
+
+m <- lm(logHeight ~ Elevation_c, data=ocos)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos)
+prd <- data.frame(x=x.seq) 
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+par(mar = c(5, 5, 2, 0)) 
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(ocos$logHeight ~ ocos$Elevation_c, 
+     col=colfunc(2)[as.factor(ocos$site)], 
+     pch = c(17:16)[as.factor(ocos$site)],
+     xlab = "Elevation (m)",
+     ylab= "Log(Height) (m)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n",
+     xlim=c(-50, 40)
+     ) 
+legend(3,1.58,
+       legend = c("Bajada", "Plain"),
+       col= c(colfunc(2)[1], colfunc(2)[2]),
+       pch = c(17:16),
+       cex=c4,
+       title="Site Type")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(-16, 1.4, pval, cex=c1)
+title("(a)", adj = 0.05, line = 0, cex.main=c3)
+
+###### Plot B
+
+d = ocos
+x=d[,"TSeg_c"]
+y=d[,"logHeight"] 
+
+m <- lm(logHeight ~ TSeg_c, data=ocos)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(ocos$logHeight ~ ocos$TSeg_c, 
+     col=colfunc(2)[as.factor(ocos$site)], 
+     pch = c(17:16)[as.factor(ocos$site)],
+     xlab = "Terminal Segment IQR (cm)",
+     ylab= "Log(Height) (m)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n") 
+legend(7,1,
+       legend = c("Bajada", "Plain"),
+       col= c(colfunc(2)[1], colfunc(2)[1]),
+       pch = c(17:16),
+       cex=c4,
+       title="Site Type")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(7, 1.1, pval, cex=c1)
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
+
+###### Plot C
+
+par(bty = 'n')
+boxplot(logHeight~site,
+        data=ocos,
+        xlab = "Site",
+        ylab= "Log(Height) (m)",
+        col=c(col.alpha( "red" , alpha = 0.4 ), 
+              col.alpha( "orange" , alpha = 0.4)),
+        border="gray30",
+        names=c("Bajada", "Plain"),
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2
+)
+title("(c)", adj = 0.05, line = 0, cex.main=c3)
+```
+
+```{r}
+# remove outlier, Plant 1
+ocos2 = ocos[ocos$Plant[2:27],]
+
+t.test(ocos$logHeight~ocos$site)
+t.test(ocos2$logHeight~ocos2$site) 
+```
+
+**After removing outlier**
+
+Plant 1 was the first plant measured and it could contain novice measurement errors. 
+
+```{r fig.width=3, fig.height=2.5}
+# recenter TSeg_IQR
+ocos2$TSeg_c = ocos2$Terminal_SegIQR - mean(ocos2$Terminal_SegIQR)
+
+# re-plot
+d = ocos2
+x=d[,"TSeg_c"]
+y=d[,"logHeight"] 
+
+m <- lm(logHeight ~ TSeg_c, data=ocos2)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos2)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(ocos2$logHeight ~ ocos2$TSeg_c, 
+     col=colfunc(2)[as.factor(ocos2$site)], 
+     pch = c(17:16)[as.factor(ocos2$site)],
+     xlab = "Terminal Segment Length IQR (cm)",
+     ylab= "Log(Height) (m)", 
+     cex=1.3,
+     cex.lab=1.5,
+     cex.axis=1.3,
+     bty="n",
+     ) 
+legend(-4.5,1.6,
+       legend = c("Bajada", "Plain"),
+       col= c(colfunc(2)[1], colfunc(2)[2]),
+       pch = c(17:16),
+       cex=1.1,
+       title="Site Type")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],2))
+text(-3, 1.2, pval, cex=1.2)
+summary(m)
+```
+
+## Circumference and Number of Branches
+
+```{r fig.width=2.1, fig.height=5.18}
+
+par(mfrow=c(3,1))
+par(mar = c(4, 5, 2, 0)) 
+
+###### Plot A
+
+dN <- ocos %>%
+  filter(COMP_plant_b==0)
+dS <- ocos %>%
+  filter(COMP_plant_b==1)
+
+xN=dN[,"Circ_c"]
+yN=dN[,"logNB"] 
+xS=dS[,"Circ_c"]
+yS=dS[,"logNB"] 
+
+mN <- lm(yN ~ xN, data=dN)
+mS <- lm(yS ~ xS, data=dS)
+xN.seq = seq(min(xN) - sd(xN), max(xN) + sd(xN)*2, length.out=100)
+xS.seq = seq(min(xS) - sd(xS), max(xS) + sd(xS), length.out=100)
+
+prdN <- data.frame(xN=xN.seq) # newdata
+prdS <- data.frame(xS=xS.seq) # newdata
+
+errN <- predict(mN, newdata = prdN, se.fit = TRUE)
+errS <- predict(mS, newdata = prdS, se.fit = TRUE)
+
+prdN$lciN <- errN$fit - 1.96 * errN$se.fit
+prdS$lciS <- errS$fit - 1.96 * errS$se.fit
+
+prdN$fit <- errN$fit
+prdS$fit <- errS$fit
+
+prdN$uci <- errN$fit + 1.96 * errN$se.fit
+prdS$uci <- errS$fit + 1.96 * errS$se.fit
+
+mu_ciN <- t(matrix(c(prdN$lci,prdN$uci), ncol=2))
+mu_ciS <- t(matrix(c(prdS$lci,prdS$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("blue", "red"))
+plot(ocos$logNB ~ ocos$Circ_c, 
+     col=colfunc(2)[as.factor(ocos$COMP_plant_type)], 
+     pch = c(17:16)[as.factor(ocos$COMP_plant_type)],
+     xlab = "Circumference (m)",
+     ylab= "Log(Number of Branches)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n",
+     ylim=c(2,4.1),
+     xlim=c(-3,4)
+     ) 
+legend(1.5, 2.65,
+       legend = c("Cactus", "Shrub"),
+       col= c(colfunc(2)[1],colfunc(2)[2] ),
+       #bty="n",
+       pch = c(17:16),
+       cex=c1
+       )
+abline(mN, lty=2, col="darkblue")
+abline(mS, lty=2, col="red")
+shade(mu_ciN, lim = prdN$xN, col=col.alpha("darkblue"))
+shade(mu_ciS, lim = prdS$xS, col=col.alpha("red"))
+pvalN <- paste0("p = ", round(summary(mN)$coefficients[8],3))
+pvalS <- paste0("p = ", round(summary(mS)$coefficients[8],3), "*")
+text(0.3, 3.7, pvalN, cex=c1, col="darkblue")
+text(1.5, 2.9, pvalS, cex=c1, col="red")
+title("(a)", adj = 0.05, line = 0, cex.main=c3)
+
+
+###### Plot B
+
+d = ocos
+x=d[,"Watershed_Dis"]
+y=d[,"logNB"] 
+
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("blue", "orange"))
+plot(ocos$logNB ~ ocos$Watershed_Dis, 
+     pch=16,
+     xlab = "Watershed Distance (m)",
+     ylab= "Log(Number of Branches)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n"
+     ) 
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(50, 3.0, pval, cex=c1)
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
+
+###### Plot C
+
+par(bty = 'n')
+boxplot(logNB~COMP_plant_b,
+        data=ocos,
+        xlab = "Competitor Plant Type",
+        ylab= "Log(Number of Branches)",
+        col=c(col.alpha( "blue" , alpha = 0.35 ), 
+              col.alpha( "red" , alpha = 0.35)),
+        border="gray30",
+        names=c("Cactus", "Shrub"),
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2
+)
+title("(c)", adj = 0.05, line = 0, cex.main=c3)
+```
+
+```{r}
+t.test(ocos$logNB~ocos$COMP_plant_type)
+```
+
+## Nearest Neighbor
+
+```{r fig.width=6, fig.height=2.7}
+par(mfrow=c(1,2))
+
+###### Plot A
+
+d = ocos_baj
+x=d[,"Elevation"]
+y=d[,"logNN"] 
+
+m <- lm(y ~ x, data=d)
+x.seq = seq(min(x) - sd(x), max(x) + 2*sd(x), length.out=100)
+
+prd <- data.frame(x=x.seq)
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+plot(ocos_baj$logNN ~ ocos_baj$Elevation, 
+     pch=(16),
+     xlab = "Elevation (m)",
+     ylab= "Log(Distance to Nearest Neighbor) (m)", 
+     cex=1.3,
+     cex.lab=1.5,
+     cex.axis=1.3,
+     bty="n",
+     xlim=c(520,600),
+     ylim=c(0,3.5)
+     ) 
+abline(m, lty=2)
+ 
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(560, 3, pval, cex=c1)
+title("(a)", adj = 0.05, line = 0, cex.main=c3)
+
+###### Plot B
+
+d = ocos_baj
+x=d[,"Number_Branches"]
+y=d[,"logNN"] 
+
+m <- lm(y ~ x, data=d)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+
+prd <- data.frame(x=x.seq) 
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("grey", "black"))
+plot(ocos_baj$logNN ~ ocos_baj$Number_Branches, 
+     col=colfunc(20)[as.factor(ocos_baj$COMP_dis)], 
+     pch=(16),
+     xlab = "Number of Branches",
+     ylab= "Log(Distance to Nearest Neighbor) (m)", 
+     cex=1.3,
+     cex.lab=1.5,
+     cex.axis=1.3,
+     bty="n",
+     xlim=c(10,60),
+     ylim=c(0,3)
+     ) 
+legend(40, 1.5,
+       legend = c("0-11", "11-22", "22-33", "33-44", "44-55"),
+       col= c(colfunc(20)[1], colfunc(20)[5], colfunc(20)[9], colfunc(20)[13], colfunc(20)[20]),
+       #bty="n",
+       pch = c(16),
+       cex=1.2,
+       title="Competitor Distance")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(32, 1.3, pval, cex=c1)
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
+```
+
+
+
+
+
+
+
