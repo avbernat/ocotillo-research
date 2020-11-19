@@ -121,7 +121,7 @@ plot(ocos$logHeight ~ ocos$TSeg_c,
      bty="n") 
 legend(7,1,
        legend = c("Bajada", "Plain"),
-       col= c(colfunc(2)[1], colfunc(2)[1]),
+       col= c(colfunc(2)[1], colfunc(2)[2]),
        pch = c(17:16),
        cex=c4,
        title="Site Type")
@@ -317,7 +317,7 @@ boxplot(logNB~COMP_plant_b,
         ylab= "Log(Number of Branches)",
         col=c(col.alpha( "blue" , alpha = 0.35 ), 
               col.alpha( "red" , alpha = 0.35)),
-        border="gray30",
+        border=c("darkblue", "red"), # grey30
         names=c("Cactus", "Shrub"),
      cex=c2,
      cex.lab=c3,
