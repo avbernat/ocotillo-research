@@ -11,7 +11,7 @@ rm(list=ls())
 library(rethinking)
 library(dplyr)
 
-dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
+dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 #dir = "/Users/allegrasteenson/Desktop/ocotillo-research/"
 setwd(dir)
 
@@ -280,7 +280,7 @@ title("(a)", adj = 0.05, line = 0, cex.main=c3)
 ###### Plot B
 
 d = ocos
-x=d[,"Watershed_Dis"]
+x=d[,"Arroyo_Dis"]
 y=d[,"logNB"] 
 
 x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
@@ -293,9 +293,9 @@ prd$uci <- err$fit + 1.96 * err$se.fit
 mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 
 colfunc <- colorRampPalette(c("blue", "orange"))
-plot(ocos$logNB ~ ocos$Watershed_Dis, 
+plot(ocos$logNB ~ ocos$Arroyo_Dis, 
      pch=16,
-     xlab = "Watershed Distance (m)",
+     xlab = "Arroyo Distance (m)",
      ylab= "Log(Number of Branches)", 
      cex=c2,
      cex.lab=c3,
