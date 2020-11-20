@@ -1,4 +1,4 @@
-Tree,Elevation,Neartest Neighbor,COMP_dis,COMP_id,Competitor Type,Site,Watershed_Dis,1m_NumShrub,1m_NumNonshrub,1m_total
+Tree,Elevation,Neartest Neighbor,COMP_dis,COMP_id,Competitor Type,Site,Arroyo_Dis,1m_NumShrub,1m_NumCacti,1m_total
 1,581,3.1,0.8,Creosote,Shrub,Bajada,323.9308711,1,0,1
 2,578,3.75,1.15,JumpingCholla,Cactus,Bajada,306.8720672,6,0,6
 3,576,3.2,0.55,Limberbush,Shrub,Bajada,317.4109189,1,0,1
@@ -19,10 +19,10 @@ Tree,Elevation,Neartest Neighbor,COMP_dis,COMP_id,Competitor Type,Site,Watershed
 18,536,6.88,2.75,OrganPipe,Cactus,Bajada,146.3757592,0,0,0
 19,533,14.7,2.6,PencilCholla,Cactus,Bajada,139.8893187,0,0,0
 20,532,9.8,2.2,Saguaro,Cactus,Bajada,127.5864995,0,0,0
-21,504,17.1,1.31,Creosote,Shrub,Plane,263.016778,1,0,1
-22,501,8.51,4.97,JumpingCholla,Cactus,Plane,169.4965041,0,0,0
-23,503,6.1,0.83,Saguaro,Cactus,Plane,163.5254854,3,1,4
-24,503,29.52,0.25,Creosote,Shrub,Plane,110.3347389,2,0,2
-25,504,7.7,4.55,Saguaro,Cactus,Plane,154.4858098,3,2,5
-28,575,2.3,2.45,Saguaro,Cactus,Plane,29.00912532,2,2,4
-29,522,15.85,5.25,Saguaro,Cactus,Plane,9.269526607,3,0,3
+21,504,17.1,1.31,Creosote,Shrub,Plain,263.016778,1,0,1
+22,501,8.51,4.97,JumpingCholla,Cactus,Plain,169.4965041,0,0,0
+23,503,6.1,0.83,Saguaro,Cactus,Plain,163.5254854,3,1,4
+24,503,29.52,0.25,Creosote,Shrub,Plain,110.3347389,2,0,2
+25,504,7.7,4.55,Saguaro,Cactus,Plain,154.4858098,3,2,5
+28,575,2.3,2.45,Saguaro,Cactus,Plain,29.00912532,2,2,4
+29,522,15.85,5.25,Saguaro,Cactus,Plain,9.269526607,3,0,3
