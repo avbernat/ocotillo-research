@@ -21,7 +21,7 @@ library(factoextra)
 library(readr)
 library(corrplot)
 
-dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
+dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 #dir = "/Users/allegrasteenson/Desktop/ocotillo-research/"
 setwd(dir)
 
@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Multivariate Modeling of Ocotillo Morphology
 
-Analyses below are multivariate models of Fouquieria splendens morphology for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Ocotillos located on the bajada were encoded with site = 0 while ocotillos on the plain were encoded with site = 1. Competitor type is split between two types – shrub and nonshrub – where nonshrub = 0 and shrub = 1. 
+Analyses below are multivariate models of Fouquieria splendens morphology for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Ocotillos located on the bajada were encoded with site = 0 while ocotillos on the plain were encoded with site = 1. Competitor type is split between two types – shrub and cactus – where cactus = 0 and shrub = 1. 
 
 ## Reading and Cleaning the Data
 
@@ -557,8 +557,8 @@ Only significant covariates are listed below:
 ```{r}
 m1 = lm(NBranch_c ~ Circ_c, data=ocos)
 m2 = lm(logNB ~ Circ_c, data=ocos)
-m3 = lm(NBranch_c ~ Watershed_c, data=ocos)
-m4 = lm(logNB ~ Watershed_c, data=ocos)
+m3 = lm(NBranch_c ~ Arroyo_c, data=ocos)
+m4 = lm(logNB ~ Arroyo_c, data=ocos)
 m5 = lm(logNB ~ COMP_dis_c, data=ocos)
 m6 = lm(NBranch_c ~ COMP_plant_b, data=ocos)
 m7 = lm(logNB ~ COMP_plant_b, data=ocos)
@@ -591,7 +591,7 @@ plot_diagnostic(m5, ocos)
 
 Null model was the top model for all other combinations of covariates except this combination:
 
-**Circ, COMP_plant_b, COMP_distance, Watershed**
+**Circ, COMP_plant_b, COMP_distance, Arroyo_Dis**
 
 ```{r}
 data<-data.frame(
@@ -599,7 +599,7 @@ data<-data.frame(
   A=ocos$Circ_c,
   B=ocos$COMP_plant_b, 
   C=ocos$COMP_dis_c,
-  D=ocos$Watershed_c) 
+  D=ocos$Arroyo_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
@@ -672,7 +672,7 @@ eq3 = paste(m6$call)[2]
 eq4 = paste(m5$call)[2]
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformula(equations, "logNB", "Circ_c", "COMP_plant_b", "COMP_dis_c", "Watershed_c")
+equations = rename_regformula(equations, "logNB", "Circ_c", "COMP_plant_b", "COMP_dis_c", "Arroyo_c")
 
 summary_tableB = cbind(equations, summary_tableB)
 colnames(summary_tableB) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -692,13 +692,13 @@ Only significant covariates are listed below:
 ```{r}
 m1 = lm(NBranch_c ~ Circ_c, data=ocos_baj)
 m2 = lm(logNB ~ Circ_c, data=ocos_baj)
-m3 = lm(NBranch_c ~ Watershed_c, data=ocos_baj)
-m4 = lm(logNB ~ Watershed_c, data=ocos_baj)
+m3 = lm(NBranch_c ~ Arroyo_c, data=ocos_baj)
+m4 = lm(logNB ~ Arroyo_c, data=ocos_baj)
 m5 = lm(logNB ~ COMP_dis_c, data=ocos_baj)
 m7 = lm(NBranch_c ~ Elevation_c, data=ocos_baj)
 m7 = lm(logNB ~ Elevation_c, data=ocos_baj)
-m8 = lm(NBranch_c ~ Watershed_c, data=ocos_baj)
-m9 = lm(logNB ~ Watershed_c, data=ocos_baj)
+m8 = lm(NBranch_c ~ Arroyo_c, data=ocos_baj)
+m9 = lm(logNB ~ Arroyo_c, data=ocos_baj)
 m10 = lm(NBranch_c ~ X1m_CID_type1, data=ocos_baj)
 m11 = lm(logNB ~ X1m_CID_type1, data=ocos_baj)
 m12 = lm(NBranch_c ~ NN_c, data=ocos_baj)
@@ -773,12 +773,12 @@ tidy_regression(m2, output_col)
 tidy_regression(m3, output_col) 
 ```
 
-**Watershed, Circ, Nearest Neighbor**
+**Arroyo_Dis, Circ, Nearest Neighbor**
 
 ```{r}
 data<-data.frame(
   R=ocos_baj$logNB,
-  A=ocos_baj$Watershed_c,
+  A=ocos_baj$Arroyo_c,
   B=ocos_baj$Circ_c, 
   C=ocos_baj$NN_c) 
 
@@ -836,11 +836,11 @@ tidy_regression(m6, output_col)
 **Comparing best fits**
 
 ```{r}
-m0 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b + Watershed_c, ocos_baj)
+m0 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b + Arroyo_c, ocos_baj)
 m1 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b + Elevation_c, ocos_baj)
 m2 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b, ocos_baj)
 m3 =lm(logNB ~ Circ_c * NN_c + Elevation_c, ocos_baj)
-m4 = lm(logNB ~ Circ_c * NN_c + Watershed_c, ocos_baj)
+m4 = lm(logNB ~ Circ_c * NN_c + Arroyo_c, ocos_baj)
 m5 = lm(logNB ~ Circ_c * NN_c, ocos_baj)
 m6 = lm(logNB ~ Circ_c + NN_c, ocos_baj)
 m7 = lm(logNB ~ Circ_c, ocos_baj)
@@ -849,7 +849,7 @@ m8 = lm(logNB ~ NN_c, ocos_baj)
 
 ```{r}
 anova(m2, m1, test="Chisq") # Adding Elevation_c does not improve fit
-anova(m2, m0, test="Chisq") # Adding Watershed_c does not improve fit
+anova(m2, m0, test="Chisq") # Adding Arroyo_c does not improve fit
 ```
 
 ```{r}
@@ -928,7 +928,7 @@ summary_tableB.B
 
 Analyses below are mixed effect models of Fouquieria splendens terminal segment length for all individuals located on both a bajada and a plain in Organ Pipe National Monument, Arizona. Terminal segment length denotes the length of each of the last five, topmost branches of the ten branches measured per ocotillo. The best fit model is the model with the lowest AIC value. The rest of the models were ordered by their ascending AIC values. No subsets of the data were used in these analyses.
 
-## Reading and Cleaning the Data
+## Re-Reading and Cleaning the Data
 
 ```{r}
 source("src/cleaning_data.R")
@@ -1007,8 +1007,8 @@ Only significant covariates are listed below (most are marginal in this case):
 
 ```{r echo=FALSE}
 m1 = lmer(Length_c ~ Height_c + (1|Tree) + (1|seg_num), data=segs)
-m2 = lmer(Length_c ~ T1m_NumNonshrub + (1|Tree) + (1|seg_num), data=segs) 
-m3 = lmer(Length_c ~ R1m_shrub2non + (1|Tree) + (1|seg_num), data=segs)
+m2 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=segs) 
+m3 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=segs)
 
 # lmer(Length_c ~ X1m_type2 + (1|Tree) + (1|seg_num), data=segs) also significant but it does not answer our question on how the number and types of small competitors affect terminal segment length.
 
@@ -1022,7 +1022,7 @@ tidy_regression(m3, output_col)
 All passed. Residuals are independent.
 
 ```{r}
-temp_segs = segs[complete.cases(segs$R1m_shrub2non),]
+temp_segs = segs[complete.cases(segs$R1m_shrub2cactus),]
 
 plot_diagnostic(m1, segs)
 plot_diagnostic(m2, segs)
@@ -1032,14 +1032,14 @@ plot_diagnostic(m4, temp_segs)
 
 **Model Comparisons**
 
-**Height, T1m_NumNonshrub, R1m_shrub2non**
+**Height, T1m_NumCacti, 1m_shrub2cactus**
 
 ```{r}
 data<-data.frame(
   R=segs$Length_c,
   A=segs$Height_c, 
-  B=segs$T1m_NumNonshrub, 
-  C=segs$R1m_shrub2non,
+  B=segs$T1m_NumCacti, 
+  C=segs$R1m_shrub2cactus,
   X=segs$Tree,
   Y=segs$seg_num)
 
@@ -1121,7 +1121,7 @@ eq4 = c(paste(formula(m0))[2], paste(formula(m0))[1], paste(formula(m0))[3]) %>%
  paste(collapse=' ')
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformulaME(equations, "Length_c", "Height_c", "T1m_NumNonshrub", "1m_shrub2non", "Tree", "seg_num")
+equations = rename_regformulaME(equations, "Length_c", "Height_c", "T1m_NumCacti", "1m_shrub2cactus", "Tree", "seg_num")
 
 summary_tableS = cbind(equations, summary_tableS)
 colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -1271,13 +1271,12 @@ GFdim$Dim.2
 ```{r}
 #Plot by competitor
 Groupings <- read_csv("data/Groupings.csv")
-growthForm$Competitor <- Groupings$Watershed_Dis
+growthForm$Competitor <- Groupings$Arroyo_Dis
 fviz_pca_ind(GFpca,
              geom.ind = "text",
              col.ind = growthForm$Competitor,
-             legend.title = "Distance to Watershed",
+             legend.title = "Distance to Arroyo",
 )
-
 ```
 
 

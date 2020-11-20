@@ -12,7 +12,7 @@ clean_data <- function(ocotillo_file, segments_file) {
   ocos$Height_c <- ocos$Height - mean(ocos$Height, na.rm=TRUE)
   ocos$Circ_c <- ocos$Circumference - mean(ocos$Circumference, na.rm=TRUE)
   ocos$NBranch_c <- ocos$Number_Branches - mean(ocos$Number_Branches, na.rm=TRUE)
-  ocos$Watershed_c <- ocos$Watershed_Dis - mean(ocos$Watershed_Dis, na.rm=TRUE)
+  ocos$Arroyo_c <- ocos$Arroyo_Dis - mean(ocos$Arroyo_Dis, na.rm=TRUE)
   ocos$TSeg_c <- ocos$Terminal_SegIQR - mean(ocos$Terminal_SegIQR, na.rm=TRUE)
   ocos$COMP_dis_c <- ocos$COMP_dis - mean(ocos$COMP_dis, na.rm=TRUE)
   ocos$COMP_plant_b <- 0
@@ -26,7 +26,7 @@ clean_data <- function(ocotillo_file, segments_file) {
   ocos$logNB <- log(ocos$Number_Branches)
   ocos$logCOMP <- log(ocos$COMP_dis)
   ocos$logCirc <- log(ocos$Circumference)
-  ocos$logWater <- log(ocos$Watershed_Dis)
+  ocos$logArroyo <- log(ocos$Arroyo_Dis)
   ocos$logTS_IQR <- log(ocos$Terminal_SegIQR)
   ocos$NID_sum <- ocos$X1m_Num1 + ocos$X1m_Num2 + ocos$X1m_Num3 + ocos$X1m_Num4
   ocos$logNID <- log(ocos$NID_sum)
@@ -73,11 +73,11 @@ clean_data <- function(ocotillo_file, segments_file) {
   col_names <- c("Tree", "Elevation", "Length", "seg_num", "branch_num", "site",
                  "Nearest_Neighbor", "Height",  "Circumference", 
                  "Number_Branches", "COMP_dis", "COMP_id", "COMP_plant_type",
-                 "Watershed_dis", "IQR", "X1m_ID1", "X1m_type1", "X1m_Num1",
+                 "Arroyo_dis", "IQR", "X1m_ID1", "X1m_type1", "X1m_Num1",
                  "X1m_ID2", "X1m_type2", "X1m_Num2",
                  "X1m_ID3", "X1m_type3", "X1m_Num3",
                  "X1m_ID4", "X1m_type4", "X1m_Num4",
-                 "T1m_NumShrub", "T1m_NumNonshrub", "R1m_shrub2non", "T1m_sum")
+                 "T1m_NumShrub", "T1m_NumCacti", "R1m_shrub2cactus", "T1m_sum")
   
   colnames(seg_baj) <- col_names
   colnames(seg_organ) <- col_names
@@ -89,7 +89,7 @@ clean_data <- function(ocotillo_file, segments_file) {
     
     # Rescaling Elevation - needed for mixed effect modeling
     dfs[[i]]$Elevation_km <-  dfs[[i]]$Elevation / 1000 
-    dfs[[i]]$Watershed_km <-  dfs[[i]]$Watershed_dis / 1000 
+    dfs[[i]]$Arroyo_km <-  dfs[[i]]$Arroyo_dis / 1000 
     
     # Centering the data
     
@@ -102,7 +102,7 @@ clean_data <- function(ocotillo_file, segments_file) {
     dfs[[i]]$COMP_dis_c <- dfs[[i]]$COMP_dis - mean(dfs[[i]]$COMP_dis)
     dfs[[i]]$COMP_plant_b <- 0
     dfs[[i]]$COMP_plant_b[dfs[[i]]$COMP_plant_type == "shrub"] <- 1
-    dfs[[i]]$Watershed_c <- dfs[[i]]$Watershed_dis - mean(dfs[[i]]$Watershed_dis, na.rm=TRUE)
+    dfs[[i]]$Arroyo_c <- dfs[[i]]$Arroyo_dis - mean(dfs[[i]]$Arroyo_dis, na.rm=TRUE)
 
   }
   

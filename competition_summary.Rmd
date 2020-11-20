@@ -11,8 +11,7 @@ rm(list=ls())
 library(ggplot2)
 library(olsrr)
 
-#dir = "/Users/anastasiabernat/Desktop/ocotillo_research/modeling_octform/"
-dir = "/Users/anastasiabernat/Desktop/ocotillo_research/"
+dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -100,8 +99,8 @@ m1 = lm(logNN ~ Elevation_c, data=ocos)
 m2 = lm(NN_c ~ Elevation_c, data=ocos)
 m3 = lm(logNN ~ site, data=ocos)
 m4 = lm(NN_c ~ site, data=ocos)
-m5 = lm(logNN ~ Watershed_c, data=ocos)
-m6 = lm(NN_c ~ Watershed_c, data=ocos)
+m5 = lm(logNN ~ Arroyo_c, data=ocos)
+m6 = lm(NN_c ~ Arroyo_c, data=ocos)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -167,13 +166,13 @@ anova(m16, m17, test='Chisq') # Adding A*C does not improve fit
 anova(m12, m16, test='Chisq') # Adding B*C does improve fit
 ```
 
-**Height, Watershed_c, Circ**
+**Height, Arroyo_c, Circ**
 
 ```{r}
 data<-data.frame(
   R=ocos$logNN,
   A=ocos$Height_c,
-  B=ocos$Watershed_c, 
+  B=ocos$Arroyo_c, 
   C=ocos$Circ_c) 
 
 source("src/compare_models.R")
@@ -191,7 +190,7 @@ anova(m5, m9, test='Chisq') # Adding A*C improves fit
 ```{r}
 m0 = lm(logNN ~ Height_c * Circ_c, data=ocos)
 m1 = lm(logNN ~ Height_c + Circ_c, data=ocos)
-m2 = lm(logNN ~ Height_c * Circ_c + Watershed_c , data=ocos)
+m2 = lm(logNN ~ Height_c * Circ_c + Arroyo_c , data=ocos)
 m3 = lm(logNN ~ Height_c * Circ_c  + Elevation_c * Circ_c , data = ocos)
 m4 = lm(logNN ~ Height_c * Circ_c  + Elevation_c, data = ocos)
 
@@ -280,8 +279,8 @@ m6 = lm(NN_c ~ COMP_plant_b, data=ocos_baj)
 m7 = lm(logNN ~ COMP_dis_c, data=ocos_baj)
 m8 = lm(logNN ~ Circ_c, data=ocos_baj)
 m9 = lm(NN_c ~ Circ_c, data=ocos_baj)
-m10 = lm(logNN ~ Watershed_c, data=ocos_baj)
-m11 = lm(NN_c ~ Watershed_c, data=ocos_baj)
+m10 = lm(logNN ~ Arroyo_c, data=ocos_baj)
+m11 = lm(NN_c ~ Arroyo_c, data=ocos_baj)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -338,12 +337,12 @@ tidy_regression(m13, output_col)
 tidy_regression(m10, output_col)
 ```
 
-**Watershed_c, NBranch_c, COMP_dis_c**
+**Arroyo_c, NBranch_c, COMP_dis_c**
 
 ```{r}
 data<-data.frame(
   R=ocos_baj$logNN,
-  A=ocos_baj$Watershed_c,
+  A=ocos_baj$Arroyo_c,
   B=ocos_baj$NBranch_c,
   C=ocos_baj$COMP_dis_c) 
 
@@ -366,7 +365,7 @@ tidy_regression(m10, output_col)
 ```{r}
 m1 = lm(logNN ~  NBranch_c * COMP_dis_c + Elevation_c, data = ocos_baj)
 m2 = lm(logNN ~ NBranch_c * COMP_dis_c, data = ocos_baj)
-m3 = lm(logNN ~  NBranch_c* COMP_dis_c + Watershed_c, data = ocos_baj)
+m3 = lm(logNN ~  NBranch_c* COMP_dis_c + Arroyo_c, data = ocos_baj)
 m4 = lm(logNN ~  NBranch_c + COMP_dis_c, data = ocos_baj)
 ```
 
@@ -436,8 +435,8 @@ summary_tableN.B
 Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lm(logCOMP ~ Watershed_c, data=ocos)
-m2 = lm(COMP_dis_c ~ Watershed_c, data=ocos)
+m1 = lm(logCOMP ~ Arroyo_c, data=ocos)
+m2 = lm(COMP_dis_c ~ Arroyo_c, data=ocos)
 m3 = lm(COMP_dis_c ~ Elevation_c, data=ocos)
 
 tidy_regression(m1, output_col) 
@@ -459,12 +458,12 @@ plot_diagnostic(m3, ocos)
 
 Null model was the top model for all other combinations of covariates except this combination:
 
-**Watershed, Elevation**
+**Arroyo_c, Elevation**
 
 ```{r}
 data<-data.frame(
   R=ocos$logCOMP,
-  A=ocos$Watershed_c,
+  A=ocos$Arroyo_c,
   B=ocos$Elevation_c) 
 
 source("src/compare_models.R")
@@ -513,11 +512,6 @@ weight1 = me1 / (sum)
 weight2 = me2 / (sum)
 weight3 = me3 / (sum)
 ```
-
-data<-data.frame(
-  R=ocos$logCOMP,
-  A=ocos$Watershed_c,
-  B=ocos$Elevation_c) 
   
 ```{r}
 summary_tableC = round(cbind(c(AIC(m1), AIC(m2), AIC(m0)),
@@ -530,7 +524,7 @@ eq2 = paste(m2$call)[2]
 eq3 = paste(m0$call)[2]
 
 equations = c(eq1, eq2, eq3)
-equations = rename_regformula(equations, "logCOMP", "Watershed_c", "Elevation_c")
+equations = rename_regformula(equations, "logCOMP", "Arroyo_c", "Elevation_c")
 
 summary_tableC = cbind(equations, summary_tableC)
 colnames(summary_tableC) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -547,8 +541,8 @@ summary_tableC
 Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lm(logCOMP ~ Watershed_c, data=ocos_baj)
-m2 = lm(COMP_dis_c ~ Watershed_c, data=ocos_baj)
+m1 = lm(logCOMP ~ Arroyo_c, data=ocos_baj)
+m2 = lm(COMP_dis_c ~ Arroyo_c, data=ocos_baj)
 m3 = lm(logCOMP ~ Elevation_c, data=ocos_baj)
 m4 = lm(COMP_dis_c ~ Elevation_c, data=ocos_baj)
 
@@ -578,7 +572,7 @@ Null model was the top model for all other combinations of covariates except thi
 ```{r}
 data<-data.frame(
   R=ocos_baj$logCOMP,
-  A=ocos_baj$Watershed_c,
+  A=ocos_baj$Arroyo_c,
   B=ocos_baj$Elevation_c) 
 
 source("src/compare_models.R")
