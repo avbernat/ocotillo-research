@@ -1175,7 +1175,7 @@ table <- pairwise.wilcox.test(seg_organ$Length, seg_organ$COMP_id,
 model1 <- kruskal.test(Length ~ COMP_plant_type, data = seg_organ)
 model2 <- kruskal.test(Length ~ COMP_id, data = seg_organ)
 
-table$p.value
+#table$p.value
 
 summary(aov(seg_organ$Length ~ seg_organ$COMP_id))
 competitor <- seg_organ$COMP_id

@@ -329,7 +329,6 @@ title("(c)", adj = 0.05, line = 0, cex.main=c3)
 ```{r}
 t.test(ocos$logNB~ocos$COMP_plant_type)
 ```
-
 ## Nearest Neighbor
 
 ```{r fig.width=6, fig.height=2.7}
@@ -412,9 +411,147 @@ text(32, 1.3, pval, cex=c1)
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ```
 
+## Testing Graphs 
+## Terminal Segment Lengths
+
+```{r}
+library(rstatix)
+library(ggplot2)
+library(ggpubr)
+```
+
+```{r}
+d = data.frame(Length=seg_organ$Length, 
+               Tree = as.character(seg_organ$Tree),
+               site = as.character(seg_organ$site))
+data = d[d$Tree != 1,]
+pwc <- seg_organ %>% 
+  dunn_test(Length ~ Tree, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "group")
+
+res.kruskal <- seg_organ %>% kruskal_test(Length ~ Tree)
+res.kruskal
+
+ggplot(data, aes(Tree,Length, color=site)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE),
+    caption = get_pwc_label(pwc)
+    ) +
+  theme(legend.position="none") +
+  xlab("Ocotillo Number") +
+  ylab("Terminal Segment Length (cm)") 
+# +
+#   geom_boxplot(width=0.1) 
+# +
+#   stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
+
+```{r}
+pwc <- seg_organ %>% 
+  dunn_test(Length ~ site, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "group")
+
+res.kruskal <- seg_organ %>% kruskal_test(Length ~ site)
+res.kruskal
+
+ggplot(data, aes(site,Length, color=site)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE),
+    caption = get_pwc_label(pwc)
+    ) +
+  theme(legend.position="none") +
+  xlab("Site") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
+
+```{r}
+qqnorm(seg_organ$Length, pch = 1, frame = FALSE)
+qqline(seg_organ$Length, col = "steelblue", lwd = 2)
+
+?qqline
+qqnorm(ocos$Terminal_SegIQR, pch = 1, frame = FALSE)
+qqline(ocos$Terminal_SegIQR, col = "steelblue", lwd = 2)
+```
+
+```{r}
+Tree1 = seg_organ[seg_organ$Tree == 1,]
+Tree2 = seg_organ[seg_organ$Tree == 2,]
+Tree3 = seg_organ[seg_organ$Tree == 3,]
+Tree4 = seg_organ[seg_organ$Tree == 4,]
+Tree5 = seg_organ[seg_organ$Tree == 5,]
+Tree6 = seg_organ[seg_organ$Tree == 6,]
+Tree7 = seg_organ[seg_organ$Tree == 7,]
+Tree8 = seg_organ[seg_organ$Tree == 8,]
+Tree9 = seg_organ[seg_organ$Tree == 9,]
+Tree10 = seg_organ[seg_organ$Tree == 10,]
+
+Tree11 = seg_organ[seg_organ$Tree == 11,]
+Tree12 = seg_organ[seg_organ$Tree == 12,]
+Tree13 = seg_organ[seg_organ$Tree == 13,]
+Tree14 = seg_organ[seg_organ$Tree == 14,]
+Tree15 = seg_organ[seg_organ$Tree == 15,]
+Tree16 = seg_organ[seg_organ$Tree == 16,]
+Tree17 = seg_organ[seg_organ$Tree == 17,]
+Tree18 = seg_organ[seg_organ$Tree == 18,]
+Tree19 = seg_organ[seg_organ$Tree == 19,]
+Tree20 = seg_organ[seg_organ$Tree == 20,]
+
+Tree21 = seg_organ[seg_organ$Tree == 21,]
+Tree22 = seg_organ[seg_organ$Tree == 22,]
+Tree23 = seg_organ[seg_organ$Tree == 23,]
+Tree24 = seg_organ[seg_organ$Tree == 24,]
+Tree25 = seg_organ[seg_organ$Tree == 25,]
+Tree26 = seg_organ[seg_organ$Tree == 26,]
+Tree27 = seg_organ[seg_organ$Tree == 27,]
+```
+
+```{r}
+qqnorm(Tree1$Length, pch = 1, frame = FALSE, col="blue")
+points(qqnorm(Tree2$Length, pch = 1, frame = FALSE, col="green"))
+qqline(Tree1$Length, col = "steelblue", lwd = 2)
 
 
+qqline(Tree2$Length, col = "steelblue", lwd = 2)
 
+qqnorm(Tree3$Length, pch = 1, frame = FALSE)
+qqline(Tree3$Length, col = "steelblue", lwd = 2)
+
+qqnorm(Tree4$Length, pch = 1, frame = FALSE)
+qqline(Tree4$Length, col = "steelblue", lwd = 2)
+
+qqnorm(Tree5$Length, pch = 1, frame = FALSE)
+qqline(Tree5$Length, col = "steelblue", lwd = 2)
+
+qqnorm(Tree6$Length, pch = 1, frame = FALSE)
+qqline(Tree6$Length, col = "steelblue", lwd = 2)
+
+qqnorm(Tree7$Length, pch = 1, frame = FALSE)
+qqline(Tree7$Length, col = "steelblue", lwd = 2)
+
+qqnorm(Tree8$Length, pch = 1, frame = FALSE)
+qqline(Tree8$Length, col = "steelblue", lwd = 2)
+
+qqnorm(Tree9$Length, pch = 1, frame = FALSE)
+qqline(Tree9$Length, col = "steelblue", lwd = 2)
+```
+
+
+Overlapping works because we would have the same sample size.
+
+```{r}
+
+qqnorm(Tree2$Length, pch = 1, frame = FALSE, col="blue")
+qqline(Tree2$Length, col = "steelblue", lwd = 2)
+points(x, Tree3$Length, col="red")
+points(x, Tree4$Length, col="orange")
+points(x, Tree5$Length, col="pink")
+
+?qqline
+```
 
 
 
