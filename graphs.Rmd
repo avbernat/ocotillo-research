@@ -411,7 +411,6 @@ text(32, 1.3, pval, cex=c1)
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ```
 
-## Testing Graphs 
 ## Terminal Segment Lengths
 
 ```{r}
@@ -472,7 +471,6 @@ ggplot(data, aes(site,Length, color=site)) +
 qqnorm(seg_organ$Length, pch = 1, frame = FALSE)
 qqline(seg_organ$Length, col = "steelblue", lwd = 2)
 
-?qqline
 qqnorm(ocos$Terminal_SegIQR, pch = 1, frame = FALSE)
 qqline(ocos$Terminal_SegIQR, col = "steelblue", lwd = 2)
 ```
@@ -509,49 +507,71 @@ Tree26 = seg_organ[seg_organ$Tree == 26,]
 Tree27 = seg_organ[seg_organ$Tree == 27,]
 ```
 
-```{r}
-qqnorm(Tree1$Length, pch = 1, frame = FALSE, col="blue")
-points(qqnorm(Tree2$Length, pch = 1, frame = FALSE, col="green"))
-qqline(Tree1$Length, col = "steelblue", lwd = 2)
 
+```{r fig.height=3, fig.width=3}
+qs = seq(0.05, 1, 0.05)
+y <- quantile(Tree2$Length, qs, type = 5)
+x <- qnorm( qs )
 
-qqline(Tree2$Length, col = "steelblue", lwd = 2)
+y3 <- quantile(Tree3$Length, qs, type = 5)
+y4 <- quantile(Tree4$Length, qs, type = 5)
+y5 <- quantile(Tree5$Length, qs, type = 5)
+y6 <- quantile(Tree6$Length, qs, type = 5)
+y7 <- quantile(Tree7$Length, qs, type = 5)
+y8 <- quantile(Tree8$Length, qs, type = 5)
+y9 <- quantile(Tree9$Length, qs, type = 5)
+y10 <- quantile(Tree10$Length, qs, type = 5)
 
-qqnorm(Tree3$Length, pch = 1, frame = FALSE)
-qqline(Tree3$Length, col = "steelblue", lwd = 2)
+y11 <- quantile(Tree11$Length, qs, type = 5)
+y12 <- quantile(Tree12$Length, qs, type = 5)
+y13 <- quantile(Tree13$Length, qs, type = 5)
+y14 <- quantile(Tree14$Length, qs, type = 5)
+y15 <- quantile(Tree15$Length, qs, type = 5)
+y16 <- quantile(Tree16$Length, qs, type = 5)
+y17 <- quantile(Tree17$Length, qs, type = 5)
+y18 <- quantile(Tree18$Length, qs, type = 5)
+y19 <- quantile(Tree19$Length, qs, type = 5)
+y20 <- quantile(Tree20$Length, qs, type = 5)
 
-qqnorm(Tree4$Length, pch = 1, frame = FALSE)
-qqline(Tree4$Length, col = "steelblue", lwd = 2)
+y21 <- quantile(Tree21$Length, qs, type = 5)
+y22 <- quantile(Tree22$Length, qs, type = 5)
+y23 <- quantile(Tree23$Length, qs, type = 5)
+y24 <- quantile(Tree24$Length, qs, type = 5)
+y25 <- quantile(Tree25$Length, qs, type = 5)
+y26 <- quantile(Tree26$Length, qs, type = 5)
+y27 <- quantile(Tree27$Length, qs, type = 5)
 
-qqnorm(Tree5$Length, pch = 1, frame = FALSE)
-qqline(Tree5$Length, col = "steelblue", lwd = 2)
+slope <- diff(y) / diff(x)
+int <- y[1] - slope * x[1]
+plot(x, y, col="grey", ylim=c(0,40))
+points(x, y3, col="grey")
+points(x, y4, col="grey")
+points(x, y5, col="grey")
+points(x, y6, col="grey")
+points(x, y7, col="grey")
+points(x, y8, col="grey")
+points(x, y9, col="grey")
+points(x, y10, col="grey")
 
-qqnorm(Tree6$Length, pch = 1, frame = FALSE)
-qqline(Tree6$Length, col = "steelblue", lwd = 2)
+points(x, y11, col="grey")
+points(x, y12, col="grey")
+points(x, y13, col="grey")
+points(x, y14, col="grey")
+points(x, y15, col="grey")
+points(x, y16, col="grey")
+points(x, y17, col="grey")
+points(x, y18, col="grey")
+points(x, y19, col="grey")
+points(x, y20, col="grey")
 
-qqnorm(Tree7$Length, pch = 1, frame = FALSE)
-qqline(Tree7$Length, col = "steelblue", lwd = 2)
+points(x, y21, col="blue")
+points(x, y22, col="blue")
+points(x, y23, col="blue")
+points(x, y24, col="blue")
+points(x, y25, col="blue")
+points(x, y26, col="blue")
+points(x, y27, col="blue")
 
-qqnorm(Tree8$Length, pch = 1, frame = FALSE)
-qqline(Tree8$Length, col = "steelblue", lwd = 2)
-
-qqnorm(Tree9$Length, pch = 1, frame = FALSE)
-qqline(Tree9$Length, col = "steelblue", lwd = 2)
+abline(a=int, b=slope)
 ```
-
-
-Overlapping works because we would have the same sample size.
-
-```{r}
-
-qqnorm(Tree2$Length, pch = 1, frame = FALSE, col="blue")
-qqline(Tree2$Length, col = "steelblue", lwd = 2)
-points(x, Tree3$Length, col="red")
-points(x, Tree4$Length, col="orange")
-points(x, Tree5$Length, col="pink")
-
-?qqline
-```
-
-
 
