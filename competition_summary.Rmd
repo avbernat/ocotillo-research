@@ -1,5 +1,6 @@
 ---
 title: "Ocotillo Competition Summary Statistics"
+author: "Anastasia Bernat"
 output:
   html_document: default
   pdf_document: default

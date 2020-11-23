@@ -1,5 +1,6 @@
 ---
 title: "Ocotillo Morphology Summary Statistics"
+author: "Regressions and Kruskal-Wallis by Anastasia Bernat | PCA by Acacia Tsz So Tang"
 output:
   html_document: default
   pdf_document: default
@@ -44,8 +45,6 @@ all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv"
 
 ocos = all_data[[2]]
 ocos_baj = ocos[ocos$Plant[1:20],]
-
-str(ocos)
 ```
 
 ## Functions
@@ -234,6 +233,11 @@ tidy_regression(m4, output_col)
 tidy_regression(m1, output_col)
 tidy_regression(m3, output_col)
 ```
+```{r}
+t.test(ocos$Height~ocos$site)
+t.test(ocos$logHeight~ocos$site)
+```
+
 
 ### Bajada Ocos
 
@@ -924,6 +928,10 @@ colnames(summary_tableB.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 summary_tableB.B
 ```
 
+```{r}
+t.test(ocos$logNB~ocos$COMP_plant_type)
+```
+
 # Mixed Effect Modeling of Ocotillo Terminal Segments
 
 Analyses below are mixed effect models of Fouquieria splendens terminal segment length for all individuals located on both a bajada and a plain in Organ Pipe National Monument, Arizona. Terminal segment length denotes the length of each of the last five, topmost branches of the ten branches measured per ocotillo. The best fit model is the model with the lowest AIC value. The rest of the models were ordered by their ascending AIC values. No subsets of the data were used in these analyses.
@@ -938,11 +946,9 @@ output_col = FALSE
 all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
 
 seg_baj = all_data[[1]][[1]]
-seg_organ = all_data[[1]][[2]] 
 segs = all_data[[1]][[3]]
 
 segs <- segs[!is.na(segs$Length_c),]
-str(segs)
 ```
 
 ## Functions
@@ -1027,7 +1033,7 @@ temp_segs = segs[complete.cases(segs$R1m_shrub2cactus),]
 plot_diagnostic(m1, segs)
 plot_diagnostic(m2, segs)
 plot_diagnostic(m3, temp_segs)
-plot_diagnostic(m4, temp_segs)
+#plot_diagnostic(m4, temp_segs)
 ```
 
 **Model Comparisons**
@@ -1131,6 +1137,133 @@ colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 summary_tableS
 ```
 
+## Bajada Ocos
+
+```{r}
+seg_baj = seg_baj[!is.na(seg_baj$Length),]
+```
+
+**Testing Covariates**
+
+Dropped branch_num as a random factor to better help the model fit the data.
+
+Only significant covariates are listed below (most are marginal in this case):
+
+```{r echo=FALSE}
+m1 = lmer(Length_c ~ Height_c + (1|Tree) + (1|seg_num), data=seg_baj)
+m2 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=seg_baj) 
+m3 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=seg_baj)
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m3, output_col)
+```
+**Plot diagnostics**
+
+All passed. Residuals are independent.
+
+```{r}
+temp_seg_baj = seg_baj[complete.cases(seg_baj$R1m_shrub2cactus),]
+
+plot_diagnostic(m1, seg_baj)
+plot_diagnostic(m2, seg_baj)
+plot_diagnostic(m3, temp_seg_baj)
+```
+
+**Height, T1m_NumCacti, 1m_shrub2cactus**
+
+```{r}
+data<-data.frame(
+  R=seg_baj$Length_c,
+  A=seg_baj$Height_c, 
+  B=seg_baj$T1m_NumCacti, 
+  C=seg_baj$R1m_shrub2cactus,
+  X=seg_baj$Tree,
+  Y=seg_baj$seg_num)
+
+# Fit the models to the same number of observations by filtering out NA values:
+data <- data[complete.cases(data),]
+
+source("src/compare_models.R")
+#model_comparisonsAIC("src/generic models-gaussian lmer 2 RF-3FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
+```
+```{r}
+anova(m1, m4, test="Chisq") # Adding B does improve fit
+anova(m1, m5, test="Chisq") # Adding C does not improve fit
+```
+
+```{r}
+tidy_regression(m4, output_col)
+tidy_regression(m1, output_col)
+tidy_regression(m5, output_col)
+tidy_regression(m0, output_col)
+```
+
+**Plot diagnostics**
+
+All passed. Residuals are independent.
+
+```{r}
+plot_diagnostic(m4, data)
+plot_diagnostic(m1, data)
+plot_diagnostic(m5, data)
+plot_diagnostic(m0, data)
+```
+
+**Calculate likelihood and weights**
+
+```{r}
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+# top models are m13, m7, and m6, m10
+
+delta1 = 0 # abs(AIC(m4) - AIC(m4))
+delta2 = abs(AIC(m4) - AIC(m1))
+delta3 = abs(AIC(m4) - AIC(m5))
+delta4 = abs(AIC(m4) - AIC(m0))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+me4 <- exp( -0.5 * delta4)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3, me4))
+
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
+```
+
+```{r}
+summary_tableS.B = round(cbind(c(AIC(m4), AIC(m5), AIC(m1), AIC(m0)),
+                            c(delta1, delta2, delta3, delta4), 
+                            c(me1, me2, me3, me4), 
+                            c(weight1, weight2, weight3, weight4)),3)
+
+eq1 = c(paste(formula(m4))[2], paste(formula(m4))[1], paste(formula(m4))[3]) %>%
+ paste(collapse=' ')
+eq2 = c(paste(formula(m5))[2], paste(formula(m5))[1], paste(formula(m5))[3]) %>%
+ paste(collapse=' ')
+eq3 = c(paste(formula(m1))[2], paste(formula(m1))[1], paste(formula(m1))[3]) %>%
+ paste(collapse=' ')
+eq4 = c(paste(formula(m0))[2], paste(formula(m0))[1], paste(formula(m0))[3]) %>%
+ paste(collapse=' ')
+
+equations = c(eq1, eq2, eq3, eq4)
+equations = rename_regformulaME(equations, "Length_c", "Height_c", "T1m_NumCacti", "1m_shrub2cactus", "Tree", "seg_num")
+
+summary_tableS.B = cbind(equations, summary_tableS.B)
+colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableS.B
+```
+
 ## Summary Tables to CSV
 
 ```{r}
@@ -1140,14 +1273,15 @@ datasets = c("all", "all", "all", "all",
              "bajada", "bajada",
              "all", "all", "all", "all", "all",
              "bajada", "bajada", "bajada", "bajada", "bajada", 
-             "all", "all", "all", "all")
+             "all", "all", "all", "all",
+             "bajada", "bajada", "bajada", "bajada")
 ```
 
 ```{r}
 full_table = rbind(summary_tableB, summary_tableB.B, 
                    summary_tableC, summary_tableC.B,
                    summary_tableH, summary_tableH.B,
-                   summary_tableS)
+                   summary_tableS, summary_tableS.B)
 
 full_table = cbind(datasets, full_table)
 colnames(full_table) = c("Ocotillos", "Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -1231,6 +1365,88 @@ ggplot(seg_organ, aes(COMP_plant_type,Length)) +
   theme(text = element_text(size=20)) +
   stat_pvalue_manual(pwc, hide.ns = TRUE)
 ```
+
+**By Competitor Type Comparing Bajada v.s. Plain**
+
+```{r fig.width=4, fig.height=3.5}
+
+#### Bajada
+
+pwc <- seg_baj %>% 
+  dunn_test(Length ~ COMP_plant_type, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "COMP_plant_type")
+
+res.kruskal <- seg_baj %>% kruskal_test(Length ~ COMP_plant_type)
+res.kruskal
+
+ggplot(seg_baj, aes(COMP_plant_type,Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Nearest Major Competitor Species Type") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+
+#### Plain
+seg_plain = seg_organ[seg_organ$site == "plain",]
+
+pwc <- seg_plain %>% 
+  dunn_test(Length ~ COMP_plant_type, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "COMP_plant_type")
+
+res.kruskal <- seg_plain %>% kruskal_test(Length ~ COMP_plant_type)
+res.kruskal
+
+ggplot(seg_plain, aes(COMP_plant_type,Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Nearest Major Competitor Species Type") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
+
+
+**By Site **
+
+```{r}
+seg_organ$site_b = seg_organ$site
+seg_organ$site[seg_organ$site_b == 0] <- "bajada"
+seg_organ$site[seg_organ$site_b == 1] <- "plain"
+```
+
+
+```{r fig.width=4, fig.height=3.5}
+seg_organ$site_b = as.factor(seg_organ$site)
+
+pwc <- seg_organ %>% 
+  dunn_test(Length ~ site, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "site")
+
+res.kruskal <- seg_organ %>% kruskal_test(Length ~ site)
+res.kruskal
+
+ggplot(seg_organ, aes(site,Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Site Type") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
+
 
 ## Principal Component Analysis (PCA)
 

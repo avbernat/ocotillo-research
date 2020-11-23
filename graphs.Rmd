@@ -10,6 +10,9 @@ rm(list=ls())
 
 library(rethinking)
 library(dplyr)
+library(rstatix)
+library(ggplot2)
+library(ggpubr)
 
 dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 #dir = "/Users/allegrasteenson/Desktop/ocotillo-research/"
@@ -31,7 +34,6 @@ ocos = all_data[[2]]
 ocos_baj = ocos[ocos$Plant[1:20],]
 
 seg_baj = all_data[[1]][[1]]
-seg_organ = all_data[[1]][[2]] 
 segs = all_data[[1]][[3]]
 
 segs <- segs[!is.na(segs$Length_c),]
@@ -113,7 +115,7 @@ colfunc <- colorRampPalette(c("red", "orange"))
 plot(ocos$logHeight ~ ocos$TSeg_c, 
      col=colfunc(2)[as.factor(ocos$site)], 
      pch = c(17:16)[as.factor(ocos$site)],
-     xlab = "Terminal Segment IQR (cm)",
+     xlab = "Terminal Segment Length IQR (cm)",
      ylab= "Log(Height) (m)", 
      cex=c2,
      cex.lab=c3,
@@ -134,10 +136,10 @@ title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ###### Plot C
 
 par(bty = 'n')
-boxplot(logHeight~site,
+boxplot(Height~site,
         data=ocos,
         xlab = "Site",
-        ylab= "Log(Height) (m)",
+        ylab= "Height (m)",
         col=c(col.alpha( "red" , alpha = 0.4 ), 
               col.alpha( "orange" , alpha = 0.4)),
         border="gray30",
@@ -149,59 +151,73 @@ boxplot(logHeight~site,
 title("(c)", adj = 0.05, line = 0, cex.main=c3)
 ```
 
-```{r}
-# remove outlier, Plant 1
-ocos2 = ocos[ocos$Plant[2:27],]
+```{r fig.width=3.0, fig.height=2.9}
 
-t.test(ocos$logHeight~ocos$site)
-t.test(ocos2$logHeight~ocos2$site) 
-```
+###### Plot B Pooled by Site
 
-**After removing outlier**
+dB <- ocos %>%
+  filter(site==0)
+dP <- ocos %>%
+  filter(site==1)
 
-Plant 1 was the first plant measured and it could contain novice measurement errors. 
+xB=dB[,"TSeg_c"]
+yB=dB[,"logHeight"] 
+xP=dP[,"TSeg_c"]
+yP=dP[,"logHeight"] 
 
-```{r fig.width=3, fig.height=2.5}
-# recenter TSeg_IQR
-ocos2$TSeg_c = ocos2$Terminal_SegIQR - mean(ocos2$Terminal_SegIQR)
+mB <- lm(yB ~ xB, data=dB)
+mP <- lm(yP ~ xP, data=dP)
+xB.seq = seq(min(xB) - sd(xB), max(xB) + sd(xB)*2, length.out=100)
+xP.seq = seq(min(xP) - 2*sd(xP), max(xP) + sd(xP), length.out=100)
 
-# re-plot
-d = ocos2
-x=d[,"TSeg_c"]
-y=d[,"logHeight"] 
+prdB <- data.frame(xB=xB.seq) # newdata
+prdP <- data.frame(xP=xP.seq) # newdata
 
-m <- lm(logHeight ~ TSeg_c, data=ocos2)
-x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
-m <- lm(y ~ x, data=ocos2)
-prd <- data.frame(x=x.seq) # newdata
-err <- predict(m, newdata = prd, se.fit = TRUE)
-prd$lci <- err$fit - 1.96 * err$se.fit
-prd$fit <- err$fit
-prd$uci <- err$fit + 1.96 * err$se.fit
-mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+errB <- predict(mB, newdata = prdB, se.fit = TRUE)
+errP <- predict(mP, newdata = prdP, se.fit = TRUE)
+
+prdB$lciB <- errB$fit - 1.96 * errB$se.fit
+prdP$lciP <- errP$fit - 1.96 * errP$se.fit
+
+prdB$fit <- errB$fit
+prdP$fit <- errP$fit
+
+prdB$uci <- errB$fit + 1.96 * errB$se.fit
+prdP$uci <- errP$fit + 1.96 * errP$se.fit
+
+mu_ciB <- t(matrix(c(prdB$lci,prdB$uci), ncol=2))
+mu_ciP <- t(matrix(c(prdP$lci,prdP$uci), ncol=2))
 
 colfunc <- colorRampPalette(c("red", "orange"))
-plot(ocos2$logHeight ~ ocos2$TSeg_c, 
-     col=colfunc(2)[as.factor(ocos2$site)], 
-     pch = c(17:16)[as.factor(ocos2$site)],
+plot(ocos$logHeight ~ ocos$TSeg_c, 
+     col=colfunc(2)[as.factor(ocos$site)], 
+     pch = c(17:16)[as.factor(ocos$site)],
      xlab = "Terminal Segment Length IQR (cm)",
-     ylab= "Log(Height) (m)", 
-     cex=1.3,
-     cex.lab=1.5,
-     cex.axis=1.3,
-     bty="n",
+     ylab= "Log(Height)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n"
      ) 
-legend(-4.5,1.6,
+legend(7, 1,
        legend = c("Bajada", "Plain"),
-       col= c(colfunc(2)[1], colfunc(2)[2]),
+       col= c(colfunc(2)[1],colfunc(2)[2] ),
+       #bty="n",
        pch = c(17:16),
-       cex=1.1,
-       title="Site Type")
-abline(m, lty=2)
-shade(mu_ci, lim = prd$x)
-pval <- paste0("p = ", round(summary(m)$coefficients[8],2))
-text(-3, 1.2, pval, cex=1.2)
-summary(m)
+       cex=c1,
+       title="Site Type"
+       )
+abline(mB, lty=2, col="red")
+abline(mP, lty=2, col="darkorange")
+shade(mu_ciB, lim = prdB$xB, col=col.alpha("darkred"))
+shade(mu_ciP, lim = prdP$xP, col=col.alpha("orange"))
+pvalB <- paste0("p = ", round(summary(mB)$coefficients[8],3), "*")
+pvalP <- paste0("p = ", round(summary(mP)$coefficients[8],3))
+text(5, 1, pvalB, cex=c1, col="red")
+text(-3, 1.4, pvalP, cex=c1, col="darkorange")
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
+summary(mB)
+summary(mP)
 ```
 
 ## Circumference and Number of Branches
@@ -326,9 +342,6 @@ boxplot(logNB~COMP_plant_b,
 title("(c)", adj = 0.05, line = 0, cex.main=c3)
 ```
 
-```{r}
-t.test(ocos$logNB~ocos$COMP_plant_type)
-```
 ## Nearest Neighbor
 
 ```{r fig.width=6, fig.height=2.7}
@@ -414,21 +427,15 @@ title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ## Terminal Segment Lengths
 
 ```{r}
-library(rstatix)
-library(ggplot2)
-library(ggpubr)
-```
-
-```{r}
-d = data.frame(Length=seg_organ$Length, 
-               Tree = as.character(seg_organ$Tree),
-               site = as.character(seg_organ$site))
+d = data.frame(Length=segs$Length, 
+               Tree = as.character(segs$Tree),
+               site = as.character(segs$site))
 data = d[d$Tree != 1,]
-pwc <- seg_organ %>% 
+pwc <- segs %>% 
   dunn_test(Length ~ Tree, p.adjust.method = "bonferroni")
 pwc <- pwc %>% add_xy_position(x = "group")
 
-res.kruskal <- seg_organ %>% kruskal_test(Length ~ Tree)
+res.kruskal <- segs %>% kruskal_test(Length ~ Tree)
 res.kruskal
 
 ggplot(data, aes(Tree,Length, color=site)) + 
@@ -447,11 +454,11 @@ ggplot(data, aes(Tree,Length, color=site)) +
 ```
 
 ```{r}
-pwc <- seg_organ %>% 
+pwc <- segs %>% 
   dunn_test(Length ~ site, p.adjust.method = "bonferroni")
 pwc <- pwc %>% add_xy_position(x = "group")
 
-res.kruskal <- seg_organ %>% kruskal_test(Length ~ site)
+res.kruskal <- segs %>% kruskal_test(Length ~ site)
 res.kruskal
 
 ggplot(data, aes(site,Length, color=site)) + 
@@ -468,43 +475,44 @@ ggplot(data, aes(site,Length, color=site)) +
 ```
 
 ```{r}
-qqnorm(seg_organ$Length, pch = 1, frame = FALSE)
-qqline(seg_organ$Length, col = "steelblue", lwd = 2)
+qqnorm(segs$Length, pch = 1, frame = FALSE)
+qqline(segs$Length, col = "steelblue", lwd = 2)
 
 qqnorm(ocos$Terminal_SegIQR, pch = 1, frame = FALSE)
 qqline(ocos$Terminal_SegIQR, col = "steelblue", lwd = 2)
 ```
 
 ```{r}
-Tree1 = seg_organ[seg_organ$Tree == 1,]
-Tree2 = seg_organ[seg_organ$Tree == 2,]
-Tree3 = seg_organ[seg_organ$Tree == 3,]
-Tree4 = seg_organ[seg_organ$Tree == 4,]
-Tree5 = seg_organ[seg_organ$Tree == 5,]
-Tree6 = seg_organ[seg_organ$Tree == 6,]
-Tree7 = seg_organ[seg_organ$Tree == 7,]
-Tree8 = seg_organ[seg_organ$Tree == 8,]
-Tree9 = seg_organ[seg_organ$Tree == 9,]
-Tree10 = seg_organ[seg_organ$Tree == 10,]
+Tree1 = segs[segs$Tree == 1,]
+Tree2 = segs[segs$Tree == 2,]
+Tree3 = segs[segs$Tree == 3,]
+Tree4 = segs[segs$Tree == 4,]
+Tree5 = segs[segs$Tree == 5,]
+Tree6 = segs[segs$Tree == 6,]
+Tree7 = segs[segs$Tree == 7,]
+Tree8 = segs[segs$Tree == 8,]
+Tree9 = segs[segs$Tree == 9,]
+Tree10 = segs[segs$Tree == 10,]
 
-Tree11 = seg_organ[seg_organ$Tree == 11,]
-Tree12 = seg_organ[seg_organ$Tree == 12,]
-Tree13 = seg_organ[seg_organ$Tree == 13,]
-Tree14 = seg_organ[seg_organ$Tree == 14,]
-Tree15 = seg_organ[seg_organ$Tree == 15,]
-Tree16 = seg_organ[seg_organ$Tree == 16,]
-Tree17 = seg_organ[seg_organ$Tree == 17,]
-Tree18 = seg_organ[seg_organ$Tree == 18,]
-Tree19 = seg_organ[seg_organ$Tree == 19,]
-Tree20 = seg_organ[seg_organ$Tree == 20,]
+Tree11 = segs[segs$Tree == 11,]
+Tree12 = segs[segs$Tree == 12,]
+Tree13 = segs[segs$Tree == 13,]
+Tree14 = segs[segs$Tree == 14,]
+Tree15 = segs[segs$Tree == 15,]
+Tree16 = segs[segs$Tree == 16,]
+Tree17 = segs[segs$Tree == 17,]
+Tree18 = segs[segs$Tree == 18,]
+Tree19 = segs[segs$Tree == 19,]
+Tree20 = segs[segs$Tree == 20,]
 
-Tree21 = seg_organ[seg_organ$Tree == 21,]
-Tree22 = seg_organ[seg_organ$Tree == 22,]
-Tree23 = seg_organ[seg_organ$Tree == 23,]
-Tree24 = seg_organ[seg_organ$Tree == 24,]
-Tree25 = seg_organ[seg_organ$Tree == 25,]
-Tree26 = seg_organ[seg_organ$Tree == 26,]
-Tree27 = seg_organ[seg_organ$Tree == 27,]
+Tree21 = segs[segs$Tree == 21,]
+Tree22 = segs[segs$Tree == 22,]
+Tree23 = segs[segs$Tree == 23,]
+Tree24 = segs[segs$Tree == 24,]
+Tree25 = segs[segs$Tree == 25,]
+
+Tree26 = segs[segs$Tree == 26,]
+Tree27 = segs[segs$Tree == 27,]
 ```
 
 
@@ -512,7 +520,7 @@ Tree27 = seg_organ[seg_organ$Tree == 27,]
 qs = seq(0.05, 1, 0.05)
 y <- quantile(Tree2$Length, qs, type = 5)
 x <- qnorm( qs )
-
+#y2 <- quantile(Tree1$Length, qs, type = 5)
 y3 <- quantile(Tree3$Length, qs, type = 5)
 y4 <- quantile(Tree4$Length, qs, type = 5)
 y5 <- quantile(Tree5$Length, qs, type = 5)
@@ -543,35 +551,206 @@ y27 <- quantile(Tree27$Length, qs, type = 5)
 
 slope <- diff(y) / diff(x)
 int <- y[1] - slope * x[1]
-plot(x, y, col="grey", ylim=c(0,40))
-points(x, y3, col="grey")
-points(x, y4, col="grey")
-points(x, y5, col="grey")
-points(x, y6, col="grey")
-points(x, y7, col="grey")
-points(x, y8, col="grey")
-points(x, y9, col="grey")
-points(x, y10, col="grey")
 
-points(x, y11, col="grey")
-points(x, y12, col="grey")
-points(x, y13, col="grey")
-points(x, y14, col="grey")
-points(x, y15, col="grey")
-points(x, y16, col="grey")
-points(x, y17, col="grey")
-points(x, y18, col="grey")
-points(x, y19, col="grey")
-points(x, y20, col="grey")
+par(bty = 'n')
+plot(x, y, col="grey", ylim=c(0,40), type="l",
+     ylab="Terminal Segment Length Quantiles",
+     xlab="Theoretical Quantile")
+lines(x, y3, col="grey")
+lines(x, y4, col="grey")
+lines(x, y5, col="grey")
+lines(x, y6, col="grey")
+lines(x, y7, col="grey")
+lines(x, y8, col="grey")
+lines(x, y9, col="grey")
+lines(x, y10, col="grey")
 
-points(x, y21, col="blue")
-points(x, y22, col="blue")
-points(x, y23, col="blue")
-points(x, y24, col="blue")
-points(x, y25, col="blue")
-points(x, y26, col="blue")
-points(x, y27, col="blue")
+lines(x, y11, col="grey")
+lines(x, y12, col="grey")
+lines(x, y13, col="grey")
+lines(x, y14, col="grey")
+lines(x, y15, col="grey")
+lines(x, y16, col="grey")
+lines(x, y17, col="grey")
+lines(x, y18, col="grey")
+lines(x, y19, col="grey")
+lines(x, y20, col="grey")
+
+lines(x, y21, col="blue")
+lines(x, y22, col="blue")
+lines(x, y23, col="blue")
+lines(x, y24, col="blue")
+lines(x, y25, col="blue")
+lines(x, y26, col="blue")
+lines(x, y27, col="blue")
 
 abline(a=int, b=slope)
 ```
+
+
+## Try
+
+Gather the shortest seg of each ocotillo on each branch and compare to the longest seg of each ocotillo on each branch.
+
+```{r}
+max1 = tapply(X=Tree1$Length, INDEX=Tree1$branch_num, FUN=max, na.rm=T)
+max2 = tapply(X=Tree2$Length, INDEX=Tree2$branch_num, FUN=max, na.rm=T)
+max3 = tapply(X=Tree3$Length, INDEX=Tree3$branch_num, FUN=max, na.rm=T)
+max4 = tapply(X=Tree4$Length, INDEX=Tree4$branch_num, FUN=max, na.rm=T)
+max5 = tapply(X=Tree5$Length, INDEX=Tree5$branch_num, FUN=max, na.rm=T)
+max6 = tapply(X=Tree6$Length, INDEX=Tree6$branch_num, FUN=max, na.rm=T)
+max7 = tapply(X=Tree7$Length, INDEX=Tree7$branch_num, FUN=max, na.rm=T)
+max8 = tapply(X=Tree8$Length, INDEX=Tree8$branch_num, FUN=max, na.rm=T)
+max9 = tapply(X=Tree9$Length, INDEX=Tree9$branch_num, FUN=max, na.rm=T)
+max10 = tapply(X=Tree10$Length, INDEX=Tree10$branch_num, FUN=max, na.rm=T)
+
+max11 = tapply(X=Tree11$Length, INDEX=Tree11$branch_num, FUN=max, na.rm=T)
+max12 = tapply(X=Tree12$Length, INDEX=Tree12$branch_num, FUN=max, na.rm=T)
+max13 = tapply(X=Tree13$Length, INDEX=Tree13$branch_num, FUN=max, na.rm=T)
+max14 = tapply(X=Tree14$Length, INDEX=Tree14$branch_num, FUN=max, na.rm=T)
+max15 = tapply(X=Tree15$Length, INDEX=Tree15$branch_num, FUN=max, na.rm=T)
+max16 = tapply(X=Tree16$Length, INDEX=Tree16$branch_num, FUN=max, na.rm=T)
+max17 = tapply(X=Tree17$Length, INDEX=Tree17$branch_num, FUN=max, na.rm=T)
+max18 = tapply(X=Tree18$Length, INDEX=Tree18$branch_num, FUN=max, na.rm=T)
+max19 = tapply(X=Tree19$Length, INDEX=Tree19$branch_num, FUN=max, na.rm=T)
+max20 = tapply(X=Tree20$Length, INDEX=Tree20$branch_num, FUN=max, na.rm=T)
+
+max21 = tapply(X=Tree21$Length, INDEX=Tree21$branch_num, FUN=max, na.rm=T)
+max22 = tapply(X=Tree22$Length, INDEX=Tree22$branch_num, FUN=max, na.rm=T)
+max23 = tapply(X=Tree23$Length, INDEX=Tree23$branch_num, FUN=max, na.rm=T)
+max24 = tapply(X=Tree24$Length, INDEX=Tree24$branch_num, FUN=max, na.rm=T)
+max25 = tapply(X=Tree25$Length, INDEX=Tree25$branch_num, FUN=max, na.rm=T)
+max26 = tapply(X=Tree26$Length, INDEX=Tree26$branch_num, FUN=max, na.rm=T)
+max27 = tapply(X=Tree27$Length, INDEX=Tree27$branch_num, FUN=max, na.rm=T)
+
+length = c(max1, max2, max3, max4, max5, max6, max7, max8, max9, max10,
+                      max11, max12, max13, max14, max15, max16, max17, max18, max19, max20,
+                      max21, max22, max23, max24, max25, max26, max27)
+high = as.data.frame(cbind(length))
+high$site = 0
+high$site[1:200] <- "bajada"
+high$site[201:270] <- "plain"
+high$extreme = 0
+high$extreme[1:270] <- "max"
+high
+```
+
+```{r}
+min1 = tapply(X=Tree1$Length, INDEX=Tree1$branch_num, FUN=min, na.rm=T)
+min2 = tapply(X=Tree2$Length, INDEX=Tree2$branch_num, FUN=min, na.rm=T)
+min3 = tapply(X=Tree3$Length, INDEX=Tree3$branch_num, FUN=min, na.rm=T)
+min4 = tapply(X=Tree4$Length, INDEX=Tree4$branch_num, FUN=min, na.rm=T)
+min5 = tapply(X=Tree5$Length, INDEX=Tree5$branch_num, FUN=min, na.rm=T)
+min6 = tapply(X=Tree6$Length, INDEX=Tree6$branch_num, FUN=min, na.rm=T)
+min7 = tapply(X=Tree7$Length, INDEX=Tree7$branch_num, FUN=min, na.rm=T)
+min8 = tapply(X=Tree8$Length, INDEX=Tree8$branch_num, FUN=min, na.rm=T)
+min9 = tapply(X=Tree9$Length, INDEX=Tree9$branch_num, FUN=min, na.rm=T)
+min10 = tapply(X=Tree10$Length, INDEX=Tree10$branch_num, FUN=min, na.rm=T)
+
+min11 = tapply(X=Tree11$Length, INDEX=Tree11$branch_num, FUN=min, na.rm=T)
+min12 = tapply(X=Tree12$Length, INDEX=Tree12$branch_num, FUN=min, na.rm=T)
+min13 = tapply(X=Tree13$Length, INDEX=Tree13$branch_num, FUN=min, na.rm=T)
+min14 = tapply(X=Tree14$Length, INDEX=Tree14$branch_num, FUN=min, na.rm=T)
+min15 = tapply(X=Tree15$Length, INDEX=Tree15$branch_num, FUN=min, na.rm=T)
+min16 = tapply(X=Tree16$Length, INDEX=Tree16$branch_num, FUN=min, na.rm=T)
+min17 = tapply(X=Tree17$Length, INDEX=Tree17$branch_num, FUN=min, na.rm=T)
+min18 = tapply(X=Tree18$Length, INDEX=Tree18$branch_num, FUN=min, na.rm=T)
+min19 = tapply(X=Tree19$Length, INDEX=Tree19$branch_num, FUN=min, na.rm=T)
+min20 = tapply(X=Tree20$Length, INDEX=Tree20$branch_num, FUN=min, na.rm=T)
+
+min21 = tapply(X=Tree21$Length, INDEX=Tree21$branch_num, FUN=min, na.rm=T)
+min22 = tapply(X=Tree22$Length, INDEX=Tree22$branch_num, FUN=min, na.rm=T)
+min23 = tapply(X=Tree23$Length, INDEX=Tree23$branch_num, FUN=min, na.rm=T)
+min24 = tapply(X=Tree24$Length, INDEX=Tree24$branch_num, FUN=min, na.rm=T)
+min25 = tapply(X=Tree25$Length, INDEX=Tree25$branch_num, FUN=min, na.rm=T)
+min26 = tapply(X=Tree26$Length, INDEX=Tree26$branch_num, FUN=min, na.rm=T)
+min27 = tapply(X=Tree27$Length, INDEX=Tree27$branch_num, FUN=min, na.rm=T)
+
+length = c(min1, min2, min3, min4, min5, min6, min7, min8, min9, min10,
+                      min11, min12, min13, min14, min15, min16, min17, min18, min19, min20,
+                      min21, min22, min23, min24, min25, min26, min27)
+
+low = as.data.frame(cbind(length))
+low$site = 0
+low$site[1:200] <- "bajada"
+low$site[201:270] <- "plain"
+low$extreme = 0
+low$extreme[1:270] <- "min"
+low
+```
+
+```{r}
+df = rbind(high, low)
+df
+```
+
+```{r fig.width=2.1, fig.height=5.18}
+
+par(mfrow=c(3,1))
+
+par(bty = 'n')
+boxplot(length~site,
+        data=high,
+        xlab = "Site",
+        ylab= "Terminal Segment Length (cm)",
+        col=c(col.alpha( "red" , alpha = 0.4 ), 
+              col.alpha( "orange" , alpha = 0.4)),
+        border="gray30",
+        names=c("Bajada", "Plain"),
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2
+)
+title("(a)", adj = 0.05, line = 0, cex.main=c3)
+
+boxplot(length~site,
+        data=low,
+        xlab = "Site",
+        ylab= "Terminal Segment Length (cm)",
+        col=c(col.alpha( "red" , alpha = 0.4 ), 
+              col.alpha( "orange" , alpha = 0.4)),
+        border="gray30",
+        names=c("Bajada", "Plain"),
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2
+)
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
+
+
+boxplot(length~extreme,
+        data=df,
+        xlab = "Extreme Values",
+        ylab= "Terminal Segment Length (cm)",
+        col=c(col.alpha( "red" , alpha = 0.4 ), 
+              col.alpha( "orange" , alpha = 0.4)),
+        border="gray30",
+        names=c("Max", "Min"),
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2
+)
+
+title("(c)", adj = 0.05, line = 0, cex.main=c3)
+```
+
+```{r}
+hist(high$length)
+hist(low$length)
+
+ggplot(df, aes(length, fill = extreme)) + 
+   geom_histogram(alpha = 0.5, aes(y = ..density..), position = 'identity')
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
