@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Multivariate Modeling of Ocotillo Inter- and Intra-Competition
 
-Analyses below are multivariate models of distance to the nearest neighboring Fouquieria splendens and nearest competitor for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Competitor type is split between two types – shrub and nonshrub – where nonshrub = 0 and shrub = 1. 
+Analyses below are multivariate models of distance to the nearest neighboring Fouquieria splendens and nearest competitor for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Competitor type is split between two types – shrub and cactus – where cactus = 0 and shrub = 1. 
 
 ## Reading and Cleaning the Data
 
@@ -533,6 +533,10 @@ colnames(summary_tableC) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 
 ```{r}
 summary_tableC
+```
+
+```{r}
+summary(m1)
 ```
 
 ### Bajada Ocotillos

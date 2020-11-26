@@ -311,7 +311,7 @@ mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 colfunc <- colorRampPalette(c("blue", "orange"))
 plot(ocos$logNB ~ ocos$Arroyo_Dis, 
      pch=16,
-     xlab = "Arroyo Distance (m)",
+     xlab = "Distance to the Nearest Arroyo (m)",
      ylab= "Log(Number of Branches)", 
      cex=c2,
      cex.lab=c3,
@@ -329,11 +329,11 @@ title("(b)", adj = 0.05, line = 0, cex.main=c3)
 par(bty = 'n')
 boxplot(logNB~COMP_plant_b,
         data=ocos,
-        xlab = "Competitor Plant Type",
+        xlab = "Major Interspecific Plant Group",
         ylab= "Log(Number of Branches)",
         col=c(col.alpha( "blue" , alpha = 0.35 ), 
               col.alpha( "red" , alpha = 0.35)),
-        border=c("darkblue", "red"), # grey30
+        border=c("grey28", "grey28"), # grey30 # darkblue, red
         names=c("Cactus", "Shrub"),
      cex=c2,
      cex.lab=c3,
@@ -416,7 +416,7 @@ legend(40, 1.5,
        #bty="n",
        pch = c(16),
        cex=1.2,
-       title="Competitor Distance")
+       title="Interspecific Distance")
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
