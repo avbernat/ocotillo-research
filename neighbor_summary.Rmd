@@ -1,5 +1,5 @@
 ---
-title: "Ocotillo Competition Summary Statistics"
+title: "Ocotillo Neighbor Summary Statistics"
 author: "Anastasia Bernat"
 output:
   html_document: default
@@ -18,9 +18,9 @@ setwd(dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Multivariate Modeling of Ocotillo Inter- and Intra-Competition
+# Multivariate Modeling of Ocotillo Inter- and Intra-Species Distance
 
-Analyses below are multivariate models of distance to the nearest neighboring Fouquieria splendens and nearest competitor for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Competitor type is split between two types – shrub and cactus – where cactus = 0 and shrub = 1. 
+Analyses below are multivariate models of distance to the nearest neighboring Fouquieria splendens and nearest interspecies neighbor for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Interspecies neighbor group is split between two types – shrub and cactus – where cactus = 0 and shrub = 1. 
 
 ## Reading and Cleaning the Data
 
@@ -194,12 +194,6 @@ m1 = lm(logNN ~ Height_c + Circ_c, data=ocos)
 m2 = lm(logNN ~ Height_c * Circ_c + Arroyo_c , data=ocos)
 m3 = lm(logNN ~ Height_c * Circ_c  + Elevation_c * Circ_c , data = ocos)
 m4 = lm(logNN ~ Height_c * Circ_c  + Elevation_c, data = ocos)
-
-AIC(m1)
-AIC(m0)
-AIC(m2)
-AIC(m4)
-AIC(m3)
 ```
 
 **Plot diagnostics**
@@ -264,6 +258,23 @@ colnames(summary_tableN) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 summary_tableN
 ```
 
+```{r}
+# Best fit model summary
+cf <- round(coef(m3), 2) 
+eqNN <- paste0("logNN = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Height",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Circ_c",
+             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Elevation_c",
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Height_c*Circ_c",
+             ifelse(sign(cf[6])==1, " + ", " - "), abs(cf[6]), " Circ_c*Elevation_c")
+
+commentNN = "Circ_c and Height_c*Circ_c | Elevation_c and Circ_c*Elevation_c are marginally sig (p < 0.10)"
+rowNN = cbind(eqNN, commentNN)
+colnames(rowNN) = c("Best Fit Model", "Significant Vars (p < 0.05)")
+rowNN
+```
+
+
 ### Bajada Ocos
 
 **Testing Covariates**
@@ -313,6 +324,7 @@ plot_diagnostic(m9, ocos_baj)
 plot_diagnostic(m10, ocos_baj)
 plot_diagnostic(m11, ocos_baj)
 ```
+
 **Model Comparisons**
 
 **Elevation_c, NBranch_c, COMP_dis_c**
@@ -427,7 +439,24 @@ colnames(summary_tableN.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 summary_tableN.B
 ```
 
-## Nearest (Major) Competitor
+
+```{r}
+# Best fit model summary
+cf <- round(coef(m1), 2) 
+eqNN.B <- paste0("logNN = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " NBranch_c",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " COMP_dis_c",
+             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Elevation_c",
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " NBranch_c*COMP_dis_c")
+
+commentNN.B = "Elevation_c and NBranch_c*COMP_dis_c"
+rowNN.B = cbind(eqNN.B, commentNN.B)
+colnames(rowNN.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
+rowNN.B
+```
+
+
+## Nearest (Major) Interspecies Neighbor
 
 ### All Ocos 
 
@@ -536,7 +565,15 @@ summary_tableC
 ```
 
 ```{r}
-summary(m1)
+# Best fit model summary
+cf <- round(coef(m1), 3) 
+eqC <- paste0("logCOMP = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Arroyo_c")
+
+commentC = "Arroyo is marginally significant (p=0.054)"
+rowC = cbind(eqC, commentC)
+colnames(rowC) = c("Best Fit Model", "Significant Vars (p < 0.05)")
+rowC
 ```
 
 ### Bajada Ocotillos
@@ -606,23 +643,89 @@ plot_diagnostic(m1, ocos_baj)
 plot_diagnostic(m2, ocos_baj)
 ```
 
-Conclusion: Same top model as the all ocotillos model comparisons.
+**Calculate likelihood and weights**
+
+```{r}
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m1) - AIC(m1))
+delta2 = abs(AIC(m1) - AIC(m2))
+delta3 = abs(AIC(m1) - AIC(m0))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3))
+
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+```
+  
+```{r}
+summary_tableC.B = round(cbind(c(AIC(m1), AIC(m2), AIC(m0)),
+                                  c(delta1, delta2, delta3), 
+                                  c(me1, me2, me3), 
+                                  c(weight1, weight2, weight3)), 3)
+
+eq1 = paste(m1$call)[2]
+eq2 = paste(m2$call)[2]
+eq3 = paste(m0$call)[2]
+
+equations = c(eq1, eq2, eq3)
+equations = rename_regformula(equations, "logCOMP", "Arroyo_c", "Elevation_c")
+
+summary_tableC.B = cbind(equations, summary_tableC.B)
+colnames(summary_tableC.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableC.B
+```
+
+
+```{r}
+# Best fit model summary
+cf <- round(coef(m1), 3) 
+eqC.B <- paste0("logCOMP = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Arroyo_c")
+
+commentC.B = "Arroyo_c"
+rowC.B = cbind(eqC.B, commentC.B)
+colnames(rowC.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
+rowC.B
+```
+
 
 ## Summary Tables to CSV
 
 ```{r}
+dataset = c("all", "bajada", "all", "bajada")
+best_fit_table = rbind(rowNN, rowNN.B,
+                       rowC, rowC.B)
+best_fit_table = cbind(dataset, best_fit_table)
+
+best_fit_table
+write.csv(best_fit_table,'best_fits_neighbor.csv', row.names=FALSE)
+```
+
+```{r}
 datasets = c("all", "all", "all", "all", "all", 
              "bajada", "bajada", "bajada", "bajada", 
-             "all", "all", "all")
+             "all", "all", "all",
+             "bajada", "bajada", "bajada")
 
 full_table = rbind(summary_tableN, summary_tableN.B, 
-                   summary_tableC)
+                   summary_tableC, summary_tableC.B)
 
 full_table = cbind(datasets, full_table)
 colnames(full_table) = c("Ocotillos", "Equation", "AIC","dAIC", "Likelihood","Weight")
 
 full_table
-write.csv(full_table,'comp_regressions.csv', row.names=FALSE)
+write.csv(full_table,'neighbor_regressions.csv', row.names=FALSE)
 ```
 
 

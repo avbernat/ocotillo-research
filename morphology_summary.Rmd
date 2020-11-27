@@ -23,7 +23,6 @@ library(readr)
 library(corrplot)
 
 dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
-#dir = "/Users/allegrasteenson/Desktop/ocotillo-research/"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
