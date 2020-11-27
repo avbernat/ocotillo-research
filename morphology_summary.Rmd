@@ -1411,6 +1411,19 @@ write.csv(full_table,'morph_regressions.csv', row.names=FALSE)
 
 ## Kruskal-Wallis 
 
+**Re-Reading and Cleaning the Data**
+
+```{r}
+source("src/cleaning_data.R")
+all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
+
+seg_baj = all_data[[1]][[1]]
+segs = all_data[[1]][[3]]
+
+segs <- segs[!is.na(segs$Length_c),]
+```
+
+
 **Histogram**
 
 ```{r fig.width=8, fig.height=3.5}
@@ -1440,7 +1453,6 @@ plot(tukey , las=1 , col="brown")
 **By Competitor Species**
 
 ```{r fig.height=4, fig.width=5.3}
-
 data = data.frame(Segment_Length=segs$Length, Competitor_Species =segs$COMP_id, COMP_plant_type = segs$COMP_plant_type)
 pwc <- segs %>% 
   dunn_test(Length ~ COMP_id, p.adjust.method = "bonferroni")
@@ -1485,11 +1497,11 @@ ggplot(segs, aes(COMP_plant_type,Length)) +
   stat_pvalue_manual(pwc, hide.ns = TRUE)
 ```
 
-**By Competitor Type Comparing Bajada v.s. Plain**
+**By Interspecies Group Comparing Bajada v.s. Plain**
 
 ```{r fig.width=4, fig.height=3.5}
 
-#### Bajada
+#### Bajada by Interspecies Group
 
 pwc <- seg_baj %>% 
   dunn_test(Length ~ COMP_plant_type, p.adjust.method = "bonferroni")
@@ -1504,14 +1516,15 @@ ggplot(seg_baj, aes(COMP_plant_type,Length)) +
     subtitle = get_test_label(res.kruskal, detailed = TRUE)
     ) + 
   theme(legend.position="none") +
-  xlab("Nearest Major Competitor Species Type") +
+  xlab("Nearest Major Interspecies Group") +
   ylab("Terminal Segment Length (cm)") +
   geom_boxplot(width=0.1) +
   theme(text = element_text(size=20)) +
   stat_pvalue_manual(pwc, hide.ns = TRUE)
 
-#### Plain
-seg_plain = seg_organ[seg_organ$site == "plain",]
+#### Plain by Interspecies Group
+
+seg_plain = segs[segs$site == 1,]
 
 pwc <- seg_plain %>% 
   dunn_test(Length ~ COMP_plant_type, p.adjust.method = "bonferroni")
@@ -1526,7 +1539,7 @@ ggplot(seg_plain, aes(COMP_plant_type,Length)) +
     subtitle = get_test_label(res.kruskal, detailed = TRUE)
     ) + 
   theme(legend.position="none") +
-  xlab("Nearest Major Competitor Species Type") +
+  xlab("Nearest Major Interspecies Group") +
   ylab("Terminal Segment Length (cm)") +
   geom_boxplot(width=0.1) +
   theme(text = element_text(size=20)) +
@@ -1537,23 +1550,23 @@ ggplot(seg_plain, aes(COMP_plant_type,Length)) +
 **By Site **
 
 ```{r}
-seg_organ$site_b = seg_organ$site
-seg_organ$site[seg_organ$site_b == 0] <- "bajada"
-seg_organ$site[seg_organ$site_b == 1] <- "plain"
+segs$site_b = segs$site
+segs$site[segs$site_b == 0] <- "bajada"
+segs$site[segs$site_b == 1] <- "plain"
 ```
 
 
 ```{r fig.width=4, fig.height=3.5}
-seg_organ$site_b = as.factor(seg_organ$site)
+segs$site_b = as.factor(segs$site)
 
-pwc <- seg_organ %>% 
+pwc <- segs %>% 
   dunn_test(Length ~ site, p.adjust.method = "bonferroni")
 pwc <- pwc %>% add_xy_position(x = "site")
 
-res.kruskal <- seg_organ %>% kruskal_test(Length ~ site)
+res.kruskal <- segs %>% kruskal_test(Length ~ site)
 res.kruskal
 
-ggplot(seg_organ, aes(site,Length)) + 
+ggplot(segs, aes(site,Length)) + 
   geom_violin() +
     labs(
     subtitle = get_test_label(res.kruskal, detailed = TRUE)
