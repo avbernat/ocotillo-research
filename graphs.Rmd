@@ -1,7 +1,6 @@
 ---
 title: "Graphs"
 author: "Anastasia Bernat"
-date: "11/18/2020"
 output: html_document
 ---
 
@@ -27,16 +26,17 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
+all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
 
 ocos = all_data[[2]]
 ocos_baj = ocos[ocos$Plant[1:20],]
 
 seg_baj = all_data[[1]][[1]]
-segs = all_data[[1]][[3]]
+segs = all_data[[1]][[2]]
 
 segs <- segs[!is.na(segs$Length_c),]
 ```
+
 
 ## Shared Plotting Parameters
 
@@ -46,6 +46,7 @@ c2 = 1.3 * 1.2
 c3 = 1.5 * 1.2
 c4 = 1.1 * 1.2
 ```
+
 
 ## Height
 
@@ -72,8 +73,8 @@ mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 par(mar = c(5, 5, 2, 0)) 
 colfunc <- colorRampPalette(c("red", "orange"))
 plot(ocos$logHeight ~ ocos$Elevation_c, 
-     col=colfunc(2)[as.factor(ocos$site)], 
-     pch = c(17:16)[as.factor(ocos$site)],
+     col=colfunc(2)[as.factor(ocos$Site)], 
+     pch = c(17:16)[as.factor(ocos$Site)],
      xlab = "Elevation (m)",
      ylab= "Log(Height) (m)", 
      cex=c2,
@@ -97,10 +98,10 @@ title("(a)", adj = 0.05, line = 0, cex.main=c3)
 ###### Plot B
 
 d = ocos
-x=d[,"TSeg_c"]
+x=d[,"TSegIQR_c"]
 y=d[,"logHeight"] 
 
-m <- lm(logHeight ~ TSeg_c, data=ocos)
+m <- lm(logHeight ~ TSegIQR_c, data=ocos)
 x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
 m <- lm(y ~ x, data=ocos)
 prd <- data.frame(x=x.seq) # newdata
@@ -111,9 +112,9 @@ prd$uci <- err$fit + 1.96 * err$se.fit
 mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 
 colfunc <- colorRampPalette(c("red", "orange"))
-plot(ocos$logHeight ~ ocos$TSeg_c, 
-     col=colfunc(2)[as.factor(ocos$site)], 
-     pch = c(17:16)[as.factor(ocos$site)],
+plot(ocos$logHeight ~ ocos$TSegIQR_c, 
+     col=colfunc(2)[as.factor(ocos$Site)], 
+     pch = c(17:16)[as.factor(ocos$Site)],
      xlab = "Terminal Segment Length IQR (cm)",
      ylab= "Log(Height) (m)", 
      cex=c2,
@@ -135,7 +136,7 @@ title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ###### Plot C
 
 par(bty = 'n')
-boxplot(Height~site,
+boxplot(Height~Site,
         data=ocos,
         xlab = "Site",
         ylab= "Height (m)",
@@ -155,13 +156,13 @@ title("(c)", adj = 0.05, line = 0, cex.main=c3)
 ###### Plot B Pooled by Site
 
 dB <- ocos %>%
-  filter(site==0)
+  filter(Site==0)
 dP <- ocos %>%
-  filter(site==1)
+  filter(Site==1)
 
-xB=dB[,"TSeg_c"]
+xB=dB[,"TSegIQR_c"]
 yB=dB[,"logHeight"] 
-xP=dP[,"TSeg_c"]
+xP=dP[,"TSegIQR_c"]
 yP=dP[,"logHeight"] 
 
 mB <- lm(yB ~ xB, data=dB)
@@ -188,9 +189,9 @@ mu_ciB <- t(matrix(c(prdB$lci,prdB$uci), ncol=2))
 mu_ciP <- t(matrix(c(prdP$lci,prdP$uci), ncol=2))
 
 colfunc <- colorRampPalette(c("red", "orange"))
-plot(ocos$logHeight ~ ocos$TSeg_c, 
-     col=colfunc(2)[as.factor(ocos$site)], 
-     pch = c(17:16)[as.factor(ocos$site)],
+plot(ocos$logHeight ~ ocos$TSegIQR_c, 
+     col=colfunc(2)[as.factor(ocos$Site)], 
+     pch = c(17:16)[as.factor(ocos$Site)],
      xlab = "Terminal Segment Length IQR (cm)",
      ylab= "Log(Height)", 
      cex=c2,
@@ -229,9 +230,9 @@ par(mar = c(4, 5, 2, 0))
 ###### Plot A
 
 dN <- ocos %>%
-  filter(COMP_plant_b==0)
+  filter(Inter_plant_b==0)
 dS <- ocos %>%
-  filter(COMP_plant_b==1)
+  filter(Inter_plant_b==1)
 
 xN=dN[,"Circ_c"]
 yN=dN[,"logNB"] 
@@ -263,8 +264,8 @@ mu_ciS <- t(matrix(c(prdS$lci,prdS$uci), ncol=2))
 
 colfunc <- colorRampPalette(c("blue", "red"))
 plot(ocos$logNB ~ ocos$Circ_c, 
-     col=colfunc(2)[as.factor(ocos$COMP_plant_type)], 
-     pch = c(17:16)[as.factor(ocos$COMP_plant_type)],
+     col=colfunc(2)[as.factor(ocos$Inter_Plant_Group)], 
+     pch = c(17:16)[as.factor(ocos$Inter_Plant_Group)],
      xlab = "Circumference (m)",
      ylab= "Log(Number of Branches)", 
      cex=c2,
@@ -326,7 +327,7 @@ title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ###### Plot C
 
 par(bty = 'n')
-boxplot(logNB~COMP_plant_b,
+boxplot(logNB~Inter_plant_b,
         data=ocos,
         xlab = "Major Interspecific Plant Group",
         ylab= "Log(Number of Branches)",
@@ -350,7 +351,7 @@ par(mfrow=c(1,2))
 
 d = ocos_baj
 x=d[,"Elevation"]
-y=d[,"logNN"] 
+y=d[,"logIntraD"] 
 
 m <- lm(y ~ x, data=d)
 x.seq = seq(min(x) - sd(x), max(x) + 2*sd(x), length.out=100)
@@ -362,7 +363,7 @@ prd$fit <- err$fit
 prd$uci <- err$fit + 1.96 * err$se.fit
 mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 
-plot(ocos_baj$logNN ~ ocos_baj$Elevation, 
+plot(ocos_baj$logIntraD ~ ocos_baj$Elevation, 
      pch=(16),
      xlab = "Elevation (m)",
      ylab= "Log(Distance to Nearest Neighbor) (m)", 
@@ -384,7 +385,7 @@ title("(a)", adj = 0.05, line = 0, cex.main=c3)
 
 d = ocos_baj
 x=d[,"Number_Branches"]
-y=d[,"logNN"] 
+y=d[,"logIntraD"] 
 
 m <- lm(y ~ x, data=d)
 x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
@@ -397,8 +398,8 @@ prd$uci <- err$fit + 1.96 * err$se.fit
 mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 
 colfunc <- colorRampPalette(c("grey", "black"))
-plot(ocos_baj$logNN ~ ocos_baj$Number_Branches, 
-     col=colfunc(20)[as.factor(ocos_baj$COMP_dis)], 
+plot(ocos_baj$logIntraD ~ ocos_baj$Number_Branches, 
+     col=colfunc(20)[as.factor(ocos_baj$Inter_Dis)], 
      pch=(16),
      xlab = "Number of Branches",
      ylab= "Log(Distance to Nearest Neighbor) (m)", 

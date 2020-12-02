@@ -1,4 +1,4 @@
-Plant,Elevation,Neartest_Neighbor,Height,Circumference,Number_Branches,COMP_dis,COMP_id,COMP_plant_type,Arroyo_ID,Arroyo_Dis,Terminal_SegIQR,1m_ID1,1m_CID_type1,1m_Num1,1m_ID2,1m_CID_type2,1m_Num2,1m_ID3,1m_CID_type3,1m_Num3,1m_ID4,1m_CID_type4,1m_Num4,1m_NumShrub,1m_NumCacti,1m_shrub2cactus,1m_sum
+﻿Plant,Elevation,Intra_Dis,Height,Circumference,Number_Branches,Inter_Dis,Inter_ID,Inter_Plant_Group,Arroyo_ID,Arroyo_Dis,Terminal_SegIQR,1m_ID1,1m_CID_type1,1m_Num1,1m_ID2,1m_CID_type2,1m_Num2,1m_ID3,1m_CID_type3,1m_Num3,1m_ID4,1m_CID_type4,1m_Num4,1m_NumShrub,1m_NumCacti,1m_shrub2cactus,1m_sum
 1,581,3.1,5,4.7,20,0.8,Creosote,shrub,87363,323.9308711,19,Creosote,shrub,1,NA,NA,0,NA,NA,0,NA,NA,0,1,0,1,1
 2,578,3.75,3.15,4.3,19,1.15,JumpingCholla,cactus,87363,306.8720672,8.75,JumpingCholla,shrub,1,Brittlebush,shrub,5,NA,NA,0,NA,NA,0,6,0,1,6
 3,576,3.2,2.75,4.78,24,0.55,Limberbush,shrub,87363,317.4109189,9.25,Limberbush,shrub,1,NA,NA,0,NA,NA,0,NA,NA,0,1,0,1,1
