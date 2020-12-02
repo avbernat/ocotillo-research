@@ -1,4 +1,4 @@
-Tree,Elevation,Neartest Neighbor,COMP_dis,COMP_id,COMP_type,Site,Arroyo_Dis,1m_NumShrub,1m_NumNonshrub,1m_total
+Tree,Elevation,Neartest Neighbor,Inter_Dis,Inter_ID,Inter_Plant_Group,Site,Arroyo_Dis,1m_NumShrub,1m_NumNonshrub,1m_total
 1,581,3.1,0.8,Creosote,Shrub,Bajada,323.9308711,1,0,1
 2,578,3.75,1.15,JumpingCholla,Cactus,Bajada,306.8720672,6,0,6
 3,576,3.2,0.55,Limberbush,Shrub,Bajada,317.4109189,1,0,1

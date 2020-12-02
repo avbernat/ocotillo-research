@@ -67,7 +67,7 @@ clean_data <- function(ocotillo_file, segments_file) {
   
   seg_baj = segs[1:1000,]
   
-  col_names <- c("Tree", "Elevation", "Length", "Seg_Num", "Branch_Num", "Site",
+  col_names <- c("Tree", "Elevation", "Length", "seg_num", "branch_num", "Site",
                  "Intra_Dis", "Height",  "Circumference", 
                  "Number_Branches", "Inter_Dis", "Inter_ID", "Inter_Plant_Group",
                  "Arroyo_Dis", "IQR", "X1m_ID1", "X1m_type1", "X1m_Num1",

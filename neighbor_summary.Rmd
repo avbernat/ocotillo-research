@@ -29,7 +29,7 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
+all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
 
 ocos = all_data[[2]]
 ocos_baj = ocos[ocos$Plant[1:20],]
@@ -87,7 +87,7 @@ rename_regformula = function (eqs, response_var, predA, predB, predC, predD) {
 }
 ```
 
-## Nearest Neighbor 
+## Nearest Intraspecific Neighbor 
 
 ### All Ocos
 
@@ -96,12 +96,12 @@ rename_regformula = function (eqs, response_var, predA, predB, predC, predD) {
 Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lm(logNN ~ Elevation_c, data=ocos)
-m2 = lm(NN_c ~ Elevation_c, data=ocos)
-m3 = lm(logNN ~ site, data=ocos)
-m4 = lm(NN_c ~ site, data=ocos)
-m5 = lm(logNN ~ Arroyo_c, data=ocos)
-m6 = lm(NN_c ~ Arroyo_c, data=ocos)
+m1 = lm(logIntraD ~ Elevation_c, data=ocos)
+m2 = lm(Intra_Dis_c ~ Elevation_c, data=ocos)
+m3 = lm(logIntraD ~ Site, data=ocos)
+m4 = lm(Intra_Dis_c ~ Site, data=ocos)
+m5 = lm(logIntraD ~ Arroyo_c, data=ocos)
+m6 = lm(Intra_Dis_c ~ Arroyo_c, data=ocos)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -124,12 +124,12 @@ plot_diagnostic(m5, ocos)
 
 **Model Comparisons**
 
-**site, Elevation_c, Circ**
+**Site, Elevation_c, Circ_c**
 
 ```{r}
 data<-data.frame(
-  R=ocos$logNN,
-  A=ocos$site,
+  R=ocos$logIntraD,
+  A=ocos$Site,
   B=ocos$Elevation_c, 
   C=ocos$Circ_c) 
 
@@ -138,7 +138,7 @@ model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 ```
 
 ```{r}
-cor(ocos$site, ocos$Elevation_c)
+cor(ocos$Site, ocos$Elevation_c)
 ```
 
 Elevation and site were highly correlated (R = -0.85), which leads to multicollinearity. In turn, interactions between site and elevation were removed. This eliminated m11.
@@ -149,11 +149,11 @@ anova(m6, m7, test='Chisq') # Adding A does not improve fit
 anova(m0, m2, test='Chisq') # Adding B improves fit
 ```
 
-**Height, Elevation_c, Circ**
+**Height_c, Elevation_c, Circ**
 
 ```{r}
 data<-data.frame(
-  R=ocos$logNN,
+  R=ocos$logIntraD,
   A=ocos$Height_c,
   B=ocos$Elevation_c, 
   C=ocos$Circ_c) 
@@ -167,11 +167,11 @@ anova(m16, m17, test='Chisq') # Adding A*C does not improve fit
 anova(m12, m16, test='Chisq') # Adding B*C does improve fit
 ```
 
-**Height, Arroyo_c, Circ**
+**Height_c, Arroyo_c, Circ_c**
 
 ```{r}
 data<-data.frame(
-  R=ocos$logNN,
+  R=ocos$logIntraD,
   A=ocos$Height_c,
   B=ocos$Arroyo_c, 
   C=ocos$Circ_c) 
@@ -189,11 +189,11 @@ anova(m5, m9, test='Chisq') # Adding A*C improves fit
 **Comparing best fits**
 
 ```{r}
-m0 = lm(logNN ~ Height_c * Circ_c, data=ocos)
-m1 = lm(logNN ~ Height_c + Circ_c, data=ocos)
-m2 = lm(logNN ~ Height_c * Circ_c + Arroyo_c , data=ocos)
-m3 = lm(logNN ~ Height_c * Circ_c  + Elevation_c * Circ_c , data = ocos)
-m4 = lm(logNN ~ Height_c * Circ_c  + Elevation_c, data = ocos)
+m0 = lm(logIntraD ~ Height_c * Circ_c, data=ocos)
+m1 = lm(logIntraD ~ Height_c + Circ_c, data=ocos)
+m2 = lm(logIntraD ~ Height_c * Circ_c + Arroyo_c , data=ocos)
+m3 = lm(logIntraD ~ Height_c * Circ_c  + Elevation_c * Circ_c , data = ocos)
+m4 = lm(logIntraD ~ Height_c * Circ_c  + Elevation_c, data = ocos)
 ```
 
 **Plot diagnostics**
@@ -261,8 +261,8 @@ summary_tableN
 ```{r}
 # Best fit model summary
 cf <- round(coef(m3), 2) 
-eqNN <- paste0("logNN = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Height",
+eqNN <- paste0("logIntraD = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Height_c",
              ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Circ_c",
              ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Elevation_c",
              ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Height_c*Circ_c",
@@ -282,17 +282,17 @@ rowNN
 Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lm(logNN ~ Elevation_c, data=ocos_baj)
-m2 = lm(NN_c ~ Elevation_c, data=ocos_baj)
-m3 = lm(logNN ~ NBranch_c, data=ocos_baj)
-m4 = lm(NN_c ~ NBranch_c, data=ocos_baj)
-m5 = lm(logNN ~ COMP_plant_b, data=ocos_baj)
-m6 = lm(NN_c ~ COMP_plant_b, data=ocos_baj)
-m7 = lm(logNN ~ COMP_dis_c, data=ocos_baj)
-m8 = lm(logNN ~ Circ_c, data=ocos_baj)
-m9 = lm(NN_c ~ Circ_c, data=ocos_baj)
-m10 = lm(logNN ~ Arroyo_c, data=ocos_baj)
-m11 = lm(NN_c ~ Arroyo_c, data=ocos_baj)
+m1 = lm(logIntraD ~ Elevation_c, data=ocos_baj)
+m2 = lm(Intra_Dis_c ~ Elevation_c, data=ocos_baj)
+m3 = lm(logIntraD ~ NBranch_c, data=ocos_baj)
+m4 = lm(Intra_Dis_c ~ NBranch_c, data=ocos_baj)
+m5 = lm(logIntraD ~ Inter_plant_b, data=ocos_baj)
+m6 = lm(Intra_Dis_c ~ Inter_plant_b, data=ocos_baj)
+m7 = lm(logIntraD ~ Inter_Dis_c, data=ocos_baj)
+m8 = lm(logIntraD ~ Circ_c, data=ocos_baj)
+m9 = lm(Intra_Dis_c ~ Circ_c, data=ocos_baj)
+m10 = lm(logIntraD ~ Arroyo_c, data=ocos_baj)
+m11 = lm(Intra_Dis_c ~ Arroyo_c, data=ocos_baj)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -327,14 +327,14 @@ plot_diagnostic(m11, ocos_baj)
 
 **Model Comparisons**
 
-**Elevation_c, NBranch_c, COMP_dis_c**
+**Elevation_c, NBranch_c, Inter_Dis_c**
 
 ```{r}
 data<-data.frame(
-  R=ocos_baj$logNN,
+  R=ocos_baj$logIntraD,
   A=ocos_baj$Elevation_c,
   B=ocos_baj$NBranch_c,
-  C=ocos_baj$COMP_dis_c) 
+  C=ocos_baj$Inter_Dis_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
@@ -350,14 +350,14 @@ tidy_regression(m13, output_col)
 tidy_regression(m10, output_col)
 ```
 
-**Arroyo_c, NBranch_c, COMP_dis_c**
+**Arroyo_c, NBranch_c, Inter_Dis_c**
 
 ```{r}
 data<-data.frame(
-  R=ocos_baj$logNN,
+  R=ocos_baj$logIntraD,
   A=ocos_baj$Arroyo_c,
   B=ocos_baj$NBranch_c,
-  C=ocos_baj$COMP_dis_c) 
+  C=ocos_baj$Inter_Dis_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
@@ -376,10 +376,10 @@ tidy_regression(m10, output_col)
 **Comparing best fits**
 
 ```{r}
-m1 = lm(logNN ~  NBranch_c * COMP_dis_c + Elevation_c, data = ocos_baj)
-m2 = lm(logNN ~ NBranch_c * COMP_dis_c, data = ocos_baj)
-m3 = lm(logNN ~  NBranch_c* COMP_dis_c + Arroyo_c, data = ocos_baj)
-m4 = lm(logNN ~  NBranch_c + COMP_dis_c, data = ocos_baj)
+m1 = lm(logIntraD ~  NBranch_c * Inter_Dis_c + Elevation_c, data = ocos_baj)
+m2 = lm(logIntraD ~ NBranch_c * Inter_Dis_c, data = ocos_baj)
+m3 = lm(logIntraD ~  NBranch_c* Inter_Dis_c + Arroyo_c, data = ocos_baj)
+m4 = lm(logIntraD ~  NBranch_c + Inter_Dis_c, data = ocos_baj)
 ```
 
 **Plot diagnostics**
@@ -443,20 +443,20 @@ summary_tableN.B
 ```{r}
 # Best fit model summary
 cf <- round(coef(m1), 2) 
-eqNN.B <- paste0("logNN = ", cf[1],
+eqNN.B <- paste0("logIntraD = ", cf[1],
              ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " NBranch_c",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " COMP_dis_c",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Inter_Dis_c",
              ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Elevation_c",
-             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " NBranch_c*COMP_dis_c")
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " NBranch_c*Inter_Dis_c")
 
-commentNN.B = "Elevation_c and NBranch_c*COMP_dis_c"
+commentNN.B = "Elevation_c and NBranch_c*Inter_Dis_c"
 rowNN.B = cbind(eqNN.B, commentNN.B)
 colnames(rowNN.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowNN.B
 ```
 
 
-## Nearest (Major) Interspecies Neighbor
+## Nearest Major Interspecies Neighbor
 
 ### All Ocos 
 
@@ -465,9 +465,9 @@ rowNN.B
 Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lm(logCOMP ~ Arroyo_c, data=ocos)
-m2 = lm(COMP_dis_c ~ Arroyo_c, data=ocos)
-m3 = lm(COMP_dis_c ~ Elevation_c, data=ocos)
+m1 = lm(logInterD ~ Arroyo_c, data=ocos)
+m2 = lm(Inter_Dis_c ~ Arroyo_c, data=ocos)
+m3 = lm(Inter_Dis_c ~ Elevation_c, data=ocos)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col) 
@@ -492,7 +492,7 @@ Null model was the top model for all other combinations of covariates except thi
 
 ```{r}
 data<-data.frame(
-  R=ocos$logCOMP,
+  R=ocos$logInterD,
   A=ocos$Arroyo_c,
   B=ocos$Elevation_c) 
 
@@ -554,7 +554,7 @@ eq2 = paste(m2$call)[2]
 eq3 = paste(m0$call)[2]
 
 equations = c(eq1, eq2, eq3)
-equations = rename_regformula(equations, "logCOMP", "Arroyo_c", "Elevation_c")
+equations = rename_regformula(equations, "logInterD", "Arroyo_c", "Elevation_c")
 
 summary_tableC = cbind(equations, summary_tableC)
 colnames(summary_tableC) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -567,10 +567,10 @@ summary_tableC
 ```{r}
 # Best fit model summary
 cf <- round(coef(m1), 3) 
-eqC <- paste0("logCOMP = ", cf[1],
+eqC <- paste0("logInterD = ", cf[1],
              ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Arroyo_c")
 
-commentC = "Arroyo is marginally significant (p=0.054)"
+commentC = "Arroyo_c is marginally significant (p=0.054)"
 rowC = cbind(eqC, commentC)
 colnames(rowC) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowC
@@ -583,10 +583,10 @@ rowC
 Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lm(logCOMP ~ Arroyo_c, data=ocos_baj)
-m2 = lm(COMP_dis_c ~ Arroyo_c, data=ocos_baj)
-m3 = lm(logCOMP ~ Elevation_c, data=ocos_baj)
-m4 = lm(COMP_dis_c ~ Elevation_c, data=ocos_baj)
+m1 = lm(logInterD ~ Arroyo_c, data=ocos_baj)
+m2 = lm(Inter_Dis_c ~ Arroyo_c, data=ocos_baj)
+m3 = lm(logInterD ~ Elevation_c, data=ocos_baj)
+m4 = lm(Inter_Dis_c ~ Elevation_c, data=ocos_baj)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col) 
@@ -613,7 +613,7 @@ Null model was the top model for all other combinations of covariates except thi
 
 ```{r}
 data<-data.frame(
-  R=ocos_baj$logCOMP,
+  R=ocos_baj$logInterD,
   A=ocos_baj$Arroyo_c,
   B=ocos_baj$Elevation_c) 
 
@@ -676,7 +676,7 @@ eq2 = paste(m2$call)[2]
 eq3 = paste(m0$call)[2]
 
 equations = c(eq1, eq2, eq3)
-equations = rename_regformula(equations, "logCOMP", "Arroyo_c", "Elevation_c")
+equations = rename_regformula(equations, "logInterD", "Arroyo_c", "Elevation_c")
 
 summary_tableC.B = cbind(equations, summary_tableC.B)
 colnames(summary_tableC.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -690,7 +690,7 @@ summary_tableC.B
 ```{r}
 # Best fit model summary
 cf <- round(coef(m1), 3) 
-eqC.B <- paste0("logCOMP = ", cf[1],
+eqC.B <- paste0("logInterD = ", cf[1],
              ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Arroyo_c")
 
 commentC.B = "Arroyo_c"

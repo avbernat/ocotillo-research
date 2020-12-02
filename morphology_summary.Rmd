@@ -40,7 +40,7 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
+all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
 
 ocos = all_data[[2]]
 ocos_baj = ocos[ocos$Plant[1:20],]
@@ -112,10 +112,10 @@ Only significant covariates are listed below:
 
 ```{r echo=FALSE}
 m1 = lm(logHeight ~ Elevation_c, data=ocos)
-m2 = lm(Height_c ~ site, data=ocos)
-m3 = lm(logHeight ~ site, data=ocos)
-m4 = lm(Height_c ~ TSeg_c, data=ocos)
-m5 = lm(logHeight ~ TSeg_c, data=ocos)
+m2 = lm(Height_c ~ Site, data=ocos)
+m3 = lm(logHeight ~ Site, data=ocos)
+m4 = lm(Height_c ~ TSegIQR_c, data=ocos)
+m5 = lm(logHeight ~ TSegIQR_c, data=ocos)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -143,16 +143,16 @@ plot_diagnostic(m5, ocos)
 ```{r}
 data<-data.frame(
   R=ocos$logHeight,
-  A=ocos$site,
+  A=ocos$Site,
   B=ocos$Elevation_c, 
-  C=ocos$TSeg_c) 
+  C=ocos$TSegIQR_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 ```
 
 ```{r}
-cor(ocos$site, ocos$Elevation_c)
+cor(ocos$Site, ocos$Elevation_c)
 ```
 
 Elevation and site were highly correlated (R = -0.85), which led to multicollinearity. In turn, we removed any interactions between elevation and site in the model comparison process in order to minimize relationships that were spurious. This eliminated m11 and m15 as the top models.
@@ -218,7 +218,7 @@ eq4 = paste(m1$call)[2]
 eq5 = paste(m3$call)[2]
 
 equations = c(eq1, eq2, eq3, eq4, eq5)
-equations = rename_regformula(equations, "logHeight", "site", "Elevation_c", "TSeq_c")
+equations = rename_regformula(equations, "logHeight", "Site", "Elevation_c", "TSeq_c")
 
 summary_tableH = cbind(equations, summary_tableH)
 colnames(summary_tableH) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -231,10 +231,10 @@ summary_tableH
 # Best fit model summary
 cf <- round(coef(m5), 2) 
 eqH <- paste0("logHeight = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " site ",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " TSeg_c")
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Site ",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " TSegIQR_c")
 
-commentH = "site and TSeg_c"
+commentH = "Site and TSegIQR_c"
 rowH = cbind(eqH, commentH)
 colnames(rowH) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowH
@@ -242,8 +242,8 @@ rowH
 
 
 ```{r}
-t.test(ocos$Height~ocos$site)
-t.test(ocos$logHeight~ocos$site)
+t.test(ocos$Height~ocos$Site)
+t.test(ocos$logHeight~ocos$Site)
 ```
 
 
@@ -254,8 +254,8 @@ t.test(ocos$logHeight~ocos$site)
 Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lm(Height_c ~ TSeg_c, data=ocos_baj)
-m2 = lm(logHeight ~ TSeg_c, data=ocos_baj)
+m1 = lm(Height_c ~ TSegIQR_c, data=ocos_baj)
+m2 = lm(logHeight ~ TSegIQR_c, data=ocos_baj)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -269,7 +269,7 @@ tidy_regression(m2, output_col)
 data<-data.frame(
   R=ocos_baj$logHeight,
   A=ocos_baj$Elevation_c,
-  B=ocos_baj$TSeg_c) 
+  B=ocos_baj$TSegIQR_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
@@ -359,7 +359,7 @@ Only factor that largely influences ocotillo height is terminal segment length.
 # Best fit model summary
 cf <- round(coef(m2), 2) 
 eqH.B <- paste0("logHeight = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " TSeq_c ")
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " TSeqIQR_c ")
 
 commentH.B = "TSeq_c"
 rowH.B = cbind(eqH.B, commentH.B)
@@ -404,7 +404,7 @@ Null model was the top model for all other combinations of covariates except thi
 data<-data.frame(
   R=ocos$logCirc,
   A=ocos$NBranch_c,
-  B=ocos$site)
+  B=ocos$Site)
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
@@ -465,7 +465,7 @@ eq2 = paste(m0$call)[2]
 eq3 = paste(m2$call)[2]
 
 equations = c(eq1, eq2, eq3)
-equations = rename_regformula(equations, "logCirc", "NBranch_c", "site")
+equations = rename_regformula(equations, "logCirc", "NBranch_c", "Site")
 
 summary_tableC = cbind(equations, summary_tableC)
 colnames(summary_tableC) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -610,9 +610,9 @@ m1 = lm(NBranch_c ~ Circ_c, data=ocos)
 m2 = lm(logNB ~ Circ_c, data=ocos)
 m3 = lm(NBranch_c ~ Arroyo_c, data=ocos)
 m4 = lm(logNB ~ Arroyo_c, data=ocos)
-m5 = lm(logNB ~ COMP_dis_c, data=ocos)
-m6 = lm(NBranch_c ~ COMP_plant_b, data=ocos)
-m7 = lm(logNB ~ COMP_plant_b, data=ocos)
+m5 = lm(logNB ~ Inter_Dis_c, data=ocos)
+m6 = lm(NBranch_c ~ Inter_plant_b, data=ocos)
+m7 = lm(logNB ~ Inter_plant_b, data=ocos)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -642,14 +642,14 @@ plot_diagnostic(m5, ocos)
 
 Null model was the top model for all other combinations of covariates except this combination:
 
-**Circ, COMP_plant_b, COMP_distance, Arroyo_Dis**
+**Circ_c, Inter_plant_b, Inter_Dis_c, Arroyo_Dis**
 
 ```{r}
 data<-data.frame(
   R=ocos$logNB,
   A=ocos$Circ_c,
-  B=ocos$COMP_plant_b, 
-  C=ocos$COMP_dis_c,
+  B=ocos$Inter_plant_b, 
+  C=ocos$Inter_Dis_c,
   D=ocos$Arroyo_c) 
 
 source("src/compare_models.R")
@@ -721,7 +721,7 @@ eq3 = paste(m6$call)[2]
 eq4 = paste(m5$call)[2]
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformula(equations, "logNB", "Circ_c", "COMP_plant_b", "COMP_dis_c", "Arroyo_c")
+equations = rename_regformula(equations, "logNB", "Circ_c", "Inter_plant_b", "Inter_Dis_c", "Arroyo_c")
 
 summary_tableB = cbind(equations, summary_tableB)
 colnames(summary_tableB) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -737,10 +737,10 @@ summary_tableB
 cf <- round(coef(m13), 3) 
 eqNB <- paste0("logNB = ", cf[1],
              ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Circ_c ",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " COMP_dis_c",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Inter_Dis_c",
              ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Arroyo_c")
 
-commentNB = "Circ_c and Arroyo_c; COMP_dis is marginal (p = 0.79)"
+commentNB = "Circ_c and Arroyo_c; Inter_Dis_c is marginal (p = 0.79)"
 rowNB = cbind(eqNB, commentNB)
 colnames(rowNB) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowNB
@@ -757,15 +757,15 @@ m1 = lm(NBranch_c ~ Circ_c, data=ocos_baj)
 m2 = lm(logNB ~ Circ_c, data=ocos_baj)
 m3 = lm(NBranch_c ~ Arroyo_c, data=ocos_baj)
 m4 = lm(logNB ~ Arroyo_c, data=ocos_baj)
-m5 = lm(logNB ~ COMP_dis_c, data=ocos_baj)
+m5 = lm(logNB ~ Inter_Dis_c, data=ocos_baj)
 m7 = lm(NBranch_c ~ Elevation_c, data=ocos_baj)
 m7 = lm(logNB ~ Elevation_c, data=ocos_baj)
 m8 = lm(NBranch_c ~ Arroyo_c, data=ocos_baj)
 m9 = lm(logNB ~ Arroyo_c, data=ocos_baj)
 m10 = lm(NBranch_c ~ X1m_CID_type1, data=ocos_baj)
 m11 = lm(logNB ~ X1m_CID_type1, data=ocos_baj)
-m12 = lm(NBranch_c ~ NN_c, data=ocos_baj)
-m13 = lm(logNB ~ NN_c, data=ocos_baj)
+m12 = lm(NBranch_c ~ Intra_Dis_c, data=ocos_baj)
+m13 = lm(logNB ~ Intra_Dis_c, data=ocos_baj)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -804,14 +804,14 @@ plot_diagnostic(m13, ocos_baj) # did not pass
 ```
 **Model Comparisons**
 
-**Elevation, Circ, Nearest Neighbor**
+**Elevation_c, Circ_c, Intra_Dis_c**
 
 ```{r}
 data<-data.frame(
   R=ocos_baj$logNB,
   A=ocos_baj$Elevation_c,
   B=ocos_baj$Circ_c, 
-  C=ocos_baj$NN_c) 
+  C=ocos_baj$Intra_Dis_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
@@ -836,14 +836,14 @@ tidy_regression(m2, output_col)
 tidy_regression(m3, output_col) 
 ```
 
-**Arroyo_Dis, Circ, Nearest Neighbor**
+**Arroyo_c, Circ_c, Intra_Dis_c**
 
 ```{r}
 data<-data.frame(
   R=ocos_baj$logNB,
   A=ocos_baj$Arroyo_c,
   B=ocos_baj$Circ_c, 
-  C=ocos_baj$NN_c) 
+  C=ocos_baj$Intra_Dis_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
@@ -868,14 +868,14 @@ tidy_regression(m2, output_col)
 tidy_regression(m3, output_col) 
 ```
 
-**COMP_plant_b, Circ, Nearest Neighbor**
+**Inter_plant_b, Circ_c, Intra_Dis_c**
 
 ```{r}
 data<-data.frame(
   R=ocos_baj$logNB,
-  A=ocos_baj$COMP_plant_b,
+  A=ocos_baj$Inter_plant_b,
   B=ocos_baj$Circ_c, 
-  C=ocos_baj$NN_c) 
+  C=ocos_baj$Intra_Dis_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
@@ -899,15 +899,15 @@ tidy_regression(m6, output_col)
 **Comparing best fits**
 
 ```{r}
-m0 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b + Arroyo_c, ocos_baj)
-m1 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b + Elevation_c, ocos_baj)
-m2 = lm(logNB ~ Circ_c * NN_c + COMP_plant_b, ocos_baj)
-m3 =lm(logNB ~ Circ_c * NN_c + Elevation_c, ocos_baj)
-m4 = lm(logNB ~ Circ_c * NN_c + Arroyo_c, ocos_baj)
-m5 = lm(logNB ~ Circ_c * NN_c, ocos_baj)
-m6 = lm(logNB ~ Circ_c + NN_c, ocos_baj)
+m0 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b + Arroyo_c, ocos_baj)
+m1 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b + Elevation_c, ocos_baj)
+m2 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b, ocos_baj)
+m3 =lm(logNB ~ Circ_c * Intra_Dis_c + Elevation_c, ocos_baj)
+m4 = lm(logNB ~ Circ_c * Intra_Dis_c + Arroyo_c, ocos_baj)
+m5 = lm(logNB ~ Circ_c * Intra_Dis_c, ocos_baj)
+m6 = lm(logNB ~ Circ_c + Intra_Dis_c, ocos_baj)
 m7 = lm(logNB ~ Circ_c, ocos_baj)
-m8 = lm(logNB ~ NN_c, ocos_baj)
+m8 = lm(logNB ~ Intra_Dis_c, ocos_baj)
 ```
 
 ```{r}
@@ -991,18 +991,18 @@ summary_tableB.B
 cf <- round(coef(m2), 2) 
 eqNB.B <- paste0("logNB = ", cf[1],
              ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Circ_c ",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " NN_c",
-             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " COMP_plant_b",
-             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Circ_c*NN_c")
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Intra_Dis_c",
+             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Inter_plant_b",
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Circ_c*Intra_Dis_c")
 
-commentNB.B = "Circ_c and Circ_c*NN_c"
+commentNB.B = "Circ_c and Circ_c*Intra_Dis_c"
 rowNB.B = cbind(eqNB.B, commentNB.B)
 colnames(rowNB.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowNB.B
 ```
 
 ```{r}
-t.test(ocos$logNB~ocos$COMP_plant_type)
+t.test(ocos$logNB~ocos$Inter_Plant_Group)
 ```
 
 # Mixed Effect Modeling of Ocotillo Terminal Segments
@@ -1016,10 +1016,10 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
+all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
 
 seg_baj = all_data[[1]][[1]]
-segs = all_data[[1]][[3]]
+segs = all_data[[1]][[2]]
 
 segs <- segs[!is.na(segs$Length_c),]
 ```
@@ -1128,7 +1128,6 @@ data<-data.frame(
 data <- data[complete.cases(data),]
 
 source("src/compare_models.R")
-#model_comparisonsAIC("src/generic models-gaussian lmer 2 RF-3FF.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
 ```
 
@@ -1274,7 +1273,6 @@ data<-data.frame(
 data <- data[complete.cases(data),]
 
 source("src/compare_models.R")
-#model_comparisonsAIC("src/generic models-gaussian lmer 2 RF-3FF.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
 ```
 ```{r}
@@ -1414,10 +1412,10 @@ write.csv(full_table,'morph_regressions.csv', row.names=FALSE)
 
 ```{r}
 source("src/cleaning_data.R")
-all_data = clean_data("data/General_Oco_Data.csv", "data/End_Segments_5segs.csv")
+all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
 
 seg_baj = all_data[[1]][[1]]
-segs = all_data[[1]][[3]]
+segs = all_data[[1]][[2]]
 
 segs <- segs[!is.na(segs$Length_c),]
 ```
@@ -1427,23 +1425,23 @@ segs <- segs[!is.na(segs$Length_c),]
 
 ```{r fig.width=8, fig.height=3.5}
 par(mfrow=c(1,2))
-hist(segs$Length, main="", xlab= "Terminal Segment Length (cm)", cex.lab=1.6, cex.axis=1.4, xlim=c(0,80), ylim=c(0,500))
+hist(segs$Length, main="", xlab= "Terminal Segment Length (cm)", cex.lab=1.6, cex.axis=1.4, xlim=c(0,80), ylim=c(0,500), col="white")
 title("(a)", adj = 0.05, line = 0, cex.main=1.5)
 ```
 
 
 ```{r}
-kruskal.test(Length ~ COMP_plant_type, data = segs)
+kruskal.test(Length ~ Inter_Plant_Group, data = segs)
 table <- pairwise.wilcox.test(segs$Length, segs$COMP_id,
                  p.adjust.method = "BH")
 
-model1 <- kruskal.test(Length ~ COMP_plant_type, data = segs)
-model2 <- kruskal.test(Length ~ COMP_id, data = segs)
+model1 <- kruskal.test(Length ~ Inter_Plant_Group, data = segs)
+model2 <- kruskal.test(Length ~ Inter_ID, data = segs)
 
 #table$p.value
 
-summary(aov(segs$Length ~ segs$COMP_id))
-competitor <- segs$COMP_id
+summary(aov(segs$Length ~ segs$Inter_ID))
+competitor <- segs$Inter_ID
 model = aov(segs$Length ~ competitor)
 tukey <- TukeyHSD(x=model, conf.level=0.95)
 par(mar = c(4, 14, 4, 1) , cex.axis=.7)
@@ -1452,15 +1450,17 @@ plot(tukey , las=1 , col="brown")
 **By Competitor Species**
 
 ```{r fig.height=4, fig.width=5.3}
-data = data.frame(Segment_Length=segs$Length, Competitor_Species =segs$COMP_id, COMP_plant_type = segs$COMP_plant_type)
+data = data.frame(Segment_Length=segs$Length, 
+                  Inter_Species=segs$Inter_ID, 
+                  Inter_Plant_Group=segs$Inter_Plant_Group)
 pwc <- segs %>% 
-  dunn_test(Length ~ COMP_id, p.adjust.method = "bonferroni")
+  dunn_test(Length ~ Inter_ID, p.adjust.method = "bonferroni")
 pwc <- pwc %>% add_xy_position(x = "group")
 
-res.kruskal <- segs %>% kruskal_test(Length ~ COMP_id)
+res.kruskal <- segs %>% kruskal_test(Length ~ Inter_ID)
 res.kruskal
 
-ggplot(segs, aes(COMP_id,Length)) + 
+ggplot(segs, aes(Inter_ID, Length)) + 
   geom_violin() +
     labs(
     subtitle = get_test_label(res.kruskal, detailed = TRUE), 
@@ -1477,13 +1477,13 @@ ggplot(segs, aes(COMP_id,Length)) +
 
 ```{r fig.width=4, fig.height=3.5}
 pwc <- segs %>% 
-  dunn_test(Length ~ COMP_plant_type, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "COMP_plant_type")
+  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
 
-res.kruskal <- segs %>% kruskal_test(Length ~ COMP_plant_type)
+res.kruskal <- segs %>% kruskal_test(Length ~ Inter_Plant_Group)
 res.kruskal
 
-ggplot(segs, aes(COMP_plant_type,Length)) + 
+ggplot(segs, aes(Inter_Plant_Group, Length)) + 
   geom_violin() +
     labs(
     subtitle = get_test_label(res.kruskal, detailed = TRUE)
@@ -1503,13 +1503,13 @@ ggplot(segs, aes(COMP_plant_type,Length)) +
 #### Bajada by Interspecies Group
 
 pwc <- seg_baj %>% 
-  dunn_test(Length ~ COMP_plant_type, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "COMP_plant_type")
+  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
 
-res.kruskal <- seg_baj %>% kruskal_test(Length ~ COMP_plant_type)
+res.kruskal <- seg_baj %>% kruskal_test(Length ~ Inter_Plant_Group)
 res.kruskal
 
-ggplot(seg_baj, aes(COMP_plant_type,Length)) + 
+ggplot(seg_baj, aes(Inter_Plant_Group,Length)) + 
   geom_violin() +
     labs(
     subtitle = get_test_label(res.kruskal, detailed = TRUE)
@@ -1523,16 +1523,16 @@ ggplot(seg_baj, aes(COMP_plant_type,Length)) +
 
 #### Plain by Interspecies Group
 
-seg_plain = segs[segs$site == 1,]
+seg_plain = segs[segs$Site == 1,]
 
 pwc <- seg_plain %>% 
-  dunn_test(Length ~ COMP_plant_type, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "COMP_plant_type")
+  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
 
-res.kruskal <- seg_plain %>% kruskal_test(Length ~ COMP_plant_type)
+res.kruskal <- seg_plain %>% kruskal_test(Length ~ Inter_Plant_Group)
 res.kruskal
 
-ggplot(seg_plain, aes(COMP_plant_type,Length)) + 
+ggplot(seg_plain, aes(Inter_Plant_Group,Length)) + 
   geom_violin() +
     labs(
     subtitle = get_test_label(res.kruskal, detailed = TRUE)
@@ -1549,23 +1549,23 @@ ggplot(seg_plain, aes(COMP_plant_type,Length)) +
 **By Site **
 
 ```{r}
-segs$site_b = segs$site
-segs$site[segs$site_b == 0] <- "bajada"
-segs$site[segs$site_b == 1] <- "plain"
+segs$Site_b = segs$Site
+segs$Site[segs$Site_b == 0] <- "bajada"
+segs$Site[segs$Site_b == 1] <- "plain"
 ```
 
 
 ```{r fig.width=4, fig.height=3.5}
-segs$site_b = as.factor(segs$site)
+segs$Site_b = as.factor(segs$Site)
 
 pwc <- segs %>% 
-  dunn_test(Length ~ site, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "site")
+  dunn_test(Length ~ Site, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Site")
 
-res.kruskal <- segs %>% kruskal_test(Length ~ site)
+res.kruskal <- segs %>% kruskal_test(Length ~ Site)
 res.kruskal
 
-ggplot(segs, aes(site,Length)) + 
+ggplot(segs, aes(Site, Length)) + 
   geom_violin() +
     labs(
     subtitle = get_test_label(res.kruskal, detailed = TRUE)
@@ -1616,12 +1616,12 @@ GFdim$Dim.2
 
 ```{r}
 Groupings <- read_csv("data/Groupings.csv")
-growthForm$Competitor <- Groupings$COMP_type
+growthForm$Inter_Plant_Group <- Groupings$Inter_Plant_Group
 growthForm$Site <- Groupings$Site
 
 fviz_pca_ind(GFpca,
              geom.ind = "text",
-             col.ind = growthForm$Competitor,
+             col.ind = growthForm$Inter_Plant_Group,
              legend.title = "Interspecific Group",
              addEllipses = TRUE
 )
