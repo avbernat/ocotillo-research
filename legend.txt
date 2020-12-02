@@ -1,0 +1,63 @@
+Data on growth form of Fouquieria splendens, with individual height, circumference, number of branches, and terminal segment length interquartile range (IQR). Additional information on elevation, nearest major interspecific plant distance and identity, nearest intraspecific plant distance, nearest arroyo distance and identity, and the count and identities of minor interspecific plants within 1 meter from the base of individual ocotillos.
+
+For details see paper.
+
+
+Columns of General_Oco_Data.csv are...
+
+Plant: number of each individual ocotillo measured; numbers 1-20 are on the bajada (bajada=0); numbers 21-27 are on the plain (plain=1)
+
+Elevation: the elevation in meters of the individual ocotillo;
+
+Intra_Dis: distance in meters from the individual ocotillo to the nearest neighboring intraspecific neighbor (ocotillo neighbor)
+
+Circumference: circumference in meters of the individual ocotillo
+
+Number_Branches: number of branches of the individual ocotillo
+
+Inter_Dis: distance in meters from the individual ocotillo to the nearest neighboring major interspecific neighbor
+
+Inter_ID: abbreviated species name of nearest major interspecific neighbor
+
+Inter_Plant_Group: 0=cactus; 1=shrub
+
+Arroyo_ID: identity number of arroyo according to the National Hydrography Dataset
+
+Arroyo_Dis: distance in meters from the individual ocotillo the nearest arroyo
+
+Terminal_SegIQR: interquartile range of the lengths of the last five segments on each measured ocotillo branch
+
+1m_ID1: abbreviated species name of the first counted minor interspecific neighbor 
+1m_CID_type1: 0=cactus; 1=shrub
+1m_Num1: marked 1 if counted at least 1 minor interspecific neighbor 
+
+1m_ID2: abbreviated species name of the second counted minor interspecific neighbor 
+1m_CID_type2: 0=cactus; 1=shrub
+1m_Num2: marked 1 if counted at least 2 minor interspecific neighbors
+
+1m_ID3: abbreviated species name of the third counted minor interspecific neighbor 
+1m_CID_type3: 0=cactus; 1=shrub
+1m_Num3: marked 1 if counted at least 3 minor interspecific neighbors
+
+1m_ID4: abbreviated species name of the fourth counted minor interspecific neighbor 
+1m_CID_type4: 0=cactus; 1=shrub
+1m_Num4: marked 1 if counted at least 4 minor interspecific neighbors
+
+1m_NumShrub: total number of minor interspecific neighbors that were shrubs
+1m_NumCacti: total number of minor interspecific neighbors that were cacti
+1m_shrub2cactus: ratio of the number of the minor interspecific neighbor shrubs to cacti
+1m_sum:	total number of minor interspecific neighbors 
+
+
+
+Columns of Terminal_5Segs.csv are...
+
+Tree: number of each individual ocotillo measured; numbers 1-20 are on the bajada (bajada=0); numbers 21-27 are on the plain (plain=1)
+
+Elevation: the elevation in meters of the individual ocotillo;
+
+Length:	length in centimeters of the segment
+
+seg_num: segment number of the individual ocotillo
+
+branch_num:	branch number of the individual ocotillo
