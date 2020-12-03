@@ -262,7 +262,7 @@ prdS$uci <- errS$fit + 1.96 * errS$se.fit
 mu_ciN <- t(matrix(c(prdN$lci,prdN$uci), ncol=2))
 mu_ciS <- t(matrix(c(prdS$lci,prdS$uci), ncol=2))
 
-colfunc <- colorRampPalette(c("blue", "red"))
+colfunc <- colorRampPalette(c("darkblue", "indianred1"))
 plot(ocos$logNB ~ ocos$Circ_c, 
      col=colfunc(2)[as.factor(ocos$Inter_Plant_Group)], 
      pch = c(17:16)[as.factor(ocos$Inter_Plant_Group)],
@@ -283,13 +283,13 @@ legend(1.5, 2.65,
        cex=c1
        )
 abline(mN, lty=2, col="darkblue")
-abline(mS, lty=2, col="red")
+abline(mS, lty=2, col="indianred1")
 shade(mu_ciN, lim = prdN$xN, col=col.alpha("darkblue"))
-shade(mu_ciS, lim = prdS$xS, col=col.alpha("red"))
+shade(mu_ciS, lim = prdS$xS, col=col.alpha("indianred1"))
 pvalN <- paste0("p = ", round(summary(mN)$coefficients[8],3))
 pvalS <- paste0("p = ", round(summary(mS)$coefficients[8],3), "*")
 text(0.3, 3.7, pvalN, cex=c1, col="darkblue")
-text(1.5, 2.9, pvalS, cex=c1, col="red")
+text(1.5, 2.9, pvalS, cex=c1, col="indianred1")
 title("(a)", adj = 0.05, line = 0, cex.main=c3)
 
 

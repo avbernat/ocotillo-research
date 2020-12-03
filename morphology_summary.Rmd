@@ -1091,7 +1091,7 @@ m1 = lmer(Length_c ~ Height_c + (1|Tree) + (1|seg_num), data=segs)
 m2 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=segs) 
 m3 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=segs)
 
-# lmer(Length_c ~ X1m_type2 + (1|Tree) + (1|seg_num), data=segs) also significant but it does not answer our question on how the number and types of small competitors affect terminal segment length.
+# lmer(Length_c ~ X1m_type2 + (1|Tree) + (1|seg_num), data=segs) also significant but it does not answer our question on how the number and types of small potential competitors affect terminal segment length.
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -1441,13 +1441,13 @@ model2 <- kruskal.test(Length ~ Inter_ID, data = segs)
 #table$p.value
 
 summary(aov(segs$Length ~ segs$Inter_ID))
-competitor <- segs$Inter_ID
-model = aov(segs$Length ~ competitor)
+Interspecific_Plant <- segs$Inter_ID
+model = aov(segs$Length ~ Interspecific_Plant)
 tukey <- TukeyHSD(x=model, conf.level=0.95)
 par(mar = c(4, 14, 4, 1) , cex.axis=.7)
 plot(tukey , las=1 , col="brown")
 ```
-**By Competitor Species**
+**By Interspecific Species**
 
 ```{r fig.height=4, fig.width=5.3}
 data = data.frame(Segment_Length=segs$Length, 
@@ -1467,15 +1467,15 @@ ggplot(segs, aes(Inter_ID, Length)) +
     caption = get_pwc_label(pwc)
     ) + 
   theme(legend.position="none") +
-  xlab("Major Nearest Shrub Competitor Species") +
+  xlab("Major Nearest Shrub Interspecific Species") +
   ylab("Terminal Segment Length (cm)") +
   geom_boxplot(width=0.1) +
   stat_pvalue_manual(pwc, hide.ns = TRUE)
 ```
 
-**By Competitor Type**
+**By Interspecific Plant Group**
 
-```{r fig.width=4, fig.height=3.5}
+```{r fig.width=4, fig.height=4.1}
 pwc <- segs %>% 
   dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
 pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
@@ -1483,9 +1483,11 @@ pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
 res.kruskal <- segs %>% kruskal_test(Length ~ Inter_Plant_Group)
 res.kruskal
 
-ggplot(segs, aes(Inter_Plant_Group, Length)) + 
+
+p = ggplot(segs, aes(Inter_Plant_Group, Length)) + 
   geom_violin() +
     labs(
+      title="(b)",
     subtitle = get_test_label(res.kruskal, detailed = TRUE)
     ) + 
   theme(legend.position="none") +
@@ -1494,6 +1496,16 @@ ggplot(segs, aes(Inter_Plant_Group, Length)) +
   geom_boxplot(width=0.1) +
   theme(text = element_text(size=20)) +
   stat_pvalue_manual(pwc, hide.ns = TRUE)
+
+p + theme(
+  panel.background = element_rect(fill = "white",
+                                colour = "grey28",
+                                size = 0.5, linetype = "solid"),
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey"), 
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                colour = "white")
+  )
 ```
 
 **By Interspecies Group Comparing Bajada v.s. Plain**
