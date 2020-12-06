@@ -47,6 +47,107 @@ c3 = 1.5 * 1.2
 c4 = 1.1 * 1.2
 ```
 
+```{r}
+ocos %>%
+  select(Plant, logHeight, Terminal_SegIQR, TSegIQR_c, Height)
+outlier = ocos %>%
+  filter(Plant !=1)
+```
+```{r}
+d = outlier
+x=d[,"TSegIQR_c"]
+y=d[,"logHeight"] 
+
+m <- lm(logHeight ~ TSegIQR_c, data=outlier)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=outlier)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(outlier$logHeight ~ outlier$TSegIQR_c, 
+     col=colfunc(2)[as.factor(outlier$Site)], 
+     pch = c(17:16)[as.factor(outlier$Site)],
+     xlab = "Terminal Segment Length IQR (cm)",
+     ylab= "Log(Height) (m)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n") 
+legend(7,1,
+       legend = c("Bajada", "Plain"),
+       col= c(colfunc(2)[1], colfunc(2)[2]),
+       pch = c(17:16),
+       cex=c4,
+       title="Site Type")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3))
+text(1, 1.5, pval, cex=c1)
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
+
+summary(lm(logHeight ~ TSegIQR_c + Site, data=outlier))
+```
+
+```{r}
+growthForm <- read.csv("data/growthForm.csv", row.names = 1)
+outlier = growthForm[2:27,]
+```
+
+```{r}
+library(outliers)
+grubbs.test(growthForm$Terminal.segment.IQR, type = 10, opposite = FALSE, two.sided = FALSE)
+growthForm$Terminal.segment.IQR
+```
+
+**Investigating Variables**
+
+```{r}
+GFpca <- PCA(growthForm, scale.unit = TRUE, graph = TRUE, ncp = 10)
+GFpca <- PCA(outlier, scale.unit = TRUE, graph = TRUE, ncp = 10)
+eig.val <- get_eigenvalue(GFpca)
+eig.val
+fviz_eig(GFpca, addlabels = TRUE, ylim = c(0, 50))
+```
+
+
+```{r}
+variables <- get_pca_var(GFpca)
+
+corrplot(variables$cos2, is.corr=FALSE)
+corrplot(variables$contrib, is.corr=FALSE)
+
+GFdim <- dimdesc(GFpca, axes = c(1,2), proba = 0.05)
+GFdim$Dim.1
+GFdim$Dim.2
+```
+
+**Plot by Group**
+
+```{r}
+Groupings <- read_csv("data/Groupings.csv")
+Groupings = Groupings[2:27,]
+outlier$Inter_Plant_Group <- Groupings$Inter_Plant_Group
+outlier$Site <- Groupings$Site
+
+fviz_pca_ind(GFpca,
+             geom.ind = "text",
+             col.ind = outlier$Inter_Plant_Group,
+             legend.title = "Interspecific Group",
+             addEllipses = TRUE
+)
+
+fviz_pca_ind(GFpca,
+             geom.ind = "text",
+             col.ind = outlier$Site,
+             legend.title = "Site Type",
+              addEllipses = TRUE
+)
+```
 
 ## Height
 
@@ -136,10 +237,10 @@ title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ###### Plot C
 
 par(bty = 'n')
-boxplot(Height~Site,
+boxplot(logHeight~Site,
         data=ocos,
         xlab = "Site",
-        ylab= "Height (m)",
+        ylab= "Log(Height) (m)",
         col=c(col.alpha( "red" , alpha = 0.4 ), 
               col.alpha( "orange" , alpha = 0.4)),
         border="gray30",
@@ -220,6 +321,7 @@ summary(mB)
 summary(mP)
 ```
 
+
 ## Circumference and Number of Branches
 
 ```{r fig.width=2.1, fig.height=5.18}
@@ -229,41 +331,21 @@ par(mar = c(4, 5, 2, 0))
 
 ###### Plot A
 
-dN <- ocos %>%
-  filter(Inter_plant_b==0)
-dS <- ocos %>%
-  filter(Inter_plant_b==1)
+d = ocos
+x=d[,"Circumference"]
+y=d[,"logNB"] 
 
-xN=dN[,"Circ_c"]
-yN=dN[,"logNB"] 
-xS=dS[,"Circ_c"]
-yS=dS[,"logNB"] 
-
-mN <- lm(yN ~ xN, data=dN)
-mS <- lm(yS ~ xS, data=dS)
-xN.seq = seq(min(xN) - sd(xN), max(xN) + sd(xN)*2, length.out=100)
-xS.seq = seq(min(xS) - sd(xS), max(xS) + sd(xS), length.out=100)
-
-prdN <- data.frame(xN=xN.seq) # newdata
-prdS <- data.frame(xS=xS.seq) # newdata
-
-errN <- predict(mN, newdata = prdN, se.fit = TRUE)
-errS <- predict(mS, newdata = prdS, se.fit = TRUE)
-
-prdN$lciN <- errN$fit - 1.96 * errN$se.fit
-prdS$lciS <- errS$fit - 1.96 * errS$se.fit
-
-prdN$fit <- errN$fit
-prdS$fit <- errS$fit
-
-prdN$uci <- errN$fit + 1.96 * errN$se.fit
-prdS$uci <- errS$fit + 1.96 * errS$se.fit
-
-mu_ciN <- t(matrix(c(prdN$lci,prdN$uci), ncol=2))
-mu_ciS <- t(matrix(c(prdS$lci,prdS$uci), ncol=2))
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 
 colfunc <- colorRampPalette(c("darkblue", "indianred1"))
-plot(ocos$logNB ~ ocos$Circ_c, 
+plot(ocos$logNB ~ ocos$Circumference, 
      col=colfunc(2)[as.factor(ocos$Inter_Plant_Group)], 
      pch = c(17:16)[as.factor(ocos$Inter_Plant_Group)],
      xlab = "Circumference (m)",
@@ -273,25 +355,20 @@ plot(ocos$logNB ~ ocos$Circ_c,
      cex.axis=c2,
      bty="n",
      ylim=c(2,4.1),
-     xlim=c(-3,4)
+     xlim=c(3,9)
      ) 
-legend(1.5, 2.65,
+legend(7.5, 2.65,
        legend = c("Cactus", "Shrub"),
        col= c(colfunc(2)[1],colfunc(2)[2] ),
        #bty="n",
        pch = c(17:16),
        cex=c1
        )
-abline(mN, lty=2, col="darkblue")
-abline(mS, lty=2, col="indianred1")
-shade(mu_ciN, lim = prdN$xN, col=col.alpha("darkblue"))
-shade(mu_ciS, lim = prdS$xS, col=col.alpha("indianred1"))
-pvalN <- paste0("p = ", round(summary(mN)$coefficients[8],3))
-pvalS <- paste0("p = ", round(summary(mS)$coefficients[8],3), "*")
-text(0.3, 3.7, pvalN, cex=c1, col="darkblue")
-text(1.5, 2.9, pvalS, cex=c1, col="indianred1")
-title("(a)", adj = 0.05, line = 0, cex.main=c3)
-
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(7, 2.95, pval, cex=c1)
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
 
 ###### Plot B
 
@@ -324,6 +401,7 @@ pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
 text(50, 3.0, pval, cex=c1)
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 
+summary(m)
 ###### Plot C
 
 par(bty = 'n')

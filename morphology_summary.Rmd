@@ -1603,7 +1603,6 @@ growthForm <- read.csv("data/growthForm.csv", row.names = 1)
 
 ```{r}
 GFpca <- PCA(growthForm, scale.unit = TRUE, graph = TRUE, ncp = 10)
-
 eig.val <- get_eigenvalue(GFpca)
 eig.val
 fviz_eig(GFpca, addlabels = TRUE, ylim = c(0, 50))
@@ -1615,8 +1614,8 @@ You can also limit the number of component to that number that accounts for a ce
 
 ```{r}
 variables <- get_pca_var(GFpca)
-corrplot(variables$cos2, is.corr=FALSE)
 
+corrplot(variables$cos2, is.corr=FALSE)
 corrplot(variables$contrib, is.corr=FALSE)
 
 GFdim <- dimdesc(GFpca, axes = c(1,2), proba = 0.05)
