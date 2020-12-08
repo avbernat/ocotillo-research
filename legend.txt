@@ -21,7 +21,7 @@ Inter_ID: abbreviated species name of nearest major interspecific neighbor
 
 Inter_Plant_Group: 0=cactus; 1=shrub
 
-Arroyo_ID: identity number of arroyo according to the National Hydrography Dataset
+Arroyo_ID: object identification number of an arroyo according to the National Hydrography Dataset
 
 Arroyo_Dis: distance in meters from the individual ocotillo the nearest arroyo
 

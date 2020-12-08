@@ -37,7 +37,6 @@ segs = all_data[[1]][[2]]
 segs <- segs[!is.na(segs$Length_c),]
 ```
 
-
 ## Shared Plotting Parameters
 
 ```{r}
@@ -53,6 +52,7 @@ ocos %>%
 outlier = ocos %>%
   filter(Plant !=1)
 ```
+
 ```{r}
 d = outlier
 x=d[,"TSegIQR_c"]
@@ -91,62 +91,6 @@ text(1, 1.5, pval, cex=c1)
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 
 summary(lm(logHeight ~ TSegIQR_c + Site, data=outlier))
-```
-
-```{r}
-growthForm <- read.csv("data/growthForm.csv", row.names = 1)
-outlier = growthForm[2:27,]
-```
-
-```{r}
-library(outliers)
-grubbs.test(growthForm$Terminal.segment.IQR, type = 10, opposite = FALSE, two.sided = FALSE)
-growthForm$Terminal.segment.IQR
-```
-
-**Investigating Variables**
-
-```{r}
-GFpca <- PCA(growthForm, scale.unit = TRUE, graph = TRUE, ncp = 10)
-GFpca <- PCA(outlier, scale.unit = TRUE, graph = TRUE, ncp = 10)
-eig.val <- get_eigenvalue(GFpca)
-eig.val
-fviz_eig(GFpca, addlabels = TRUE, ylim = c(0, 50))
-```
-
-
-```{r}
-variables <- get_pca_var(GFpca)
-
-corrplot(variables$cos2, is.corr=FALSE)
-corrplot(variables$contrib, is.corr=FALSE)
-
-GFdim <- dimdesc(GFpca, axes = c(1,2), proba = 0.05)
-GFdim$Dim.1
-GFdim$Dim.2
-```
-
-**Plot by Group**
-
-```{r}
-Groupings <- read_csv("data/Groupings.csv")
-Groupings = Groupings[2:27,]
-outlier$Inter_Plant_Group <- Groupings$Inter_Plant_Group
-outlier$Site <- Groupings$Site
-
-fviz_pca_ind(GFpca,
-             geom.ind = "text",
-             col.ind = outlier$Inter_Plant_Group,
-             legend.title = "Interspecific Group",
-             addEllipses = TRUE
-)
-
-fviz_pca_ind(GFpca,
-             geom.ind = "text",
-             col.ind = outlier$Site,
-             legend.title = "Site Type",
-              addEllipses = TRUE
-)
 ```
 
 ## Height
