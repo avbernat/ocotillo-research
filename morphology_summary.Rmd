@@ -40,10 +40,12 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
+all_data = clean_data("data/General_Oco_Data2.csv", "data/Terminal_5Segs.csv")
 
 ocos = all_data[[2]]
-ocos_baj = ocos[ocos$Plant[1:20],]
+ocos_baj = ocos[1:20,]
+segs = all_data[[1]]
+seg_baj = segs[1:1000,] 
 ```
 
 ## Functions
@@ -1004,6 +1006,214 @@ rowNB.B
 ```{r}
 t.test(ocos$logNB~ocos$Inter_Plant_Group)
 ```
+## Number of Nodes
+
+### All Ocos
+
+**Testing Covariates** 
+
+Only significant covariates are listed below:
+
+```{r}
+m1 = lm(NumNodes_c ~ Arroyo_c, data=ocos) # marginally significant
+m2 = lm(logNodes ~ Arroyo_c, data=ocos) # marginally significant
+m3 = lm(NumNodes_c ~ Elevation_c, data=ocos) # site is what drives this relationship
+m4 = lm(logNodes ~ Elevation_c, data=ocos) 
+m5 = lm(NumNodes_c ~ Site, data=ocos) 
+m6 = lm(logNodes ~ Site, data=ocos) 
+m7 = lm(NumNodes_c ~ Median_BL_c, data=ocos) 
+m8 = lm(logNodes ~ Median_BL_c, data=ocos) 
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m3, output_col) 
+tidy_regression(m4, output_col) 
+tidy_regression(m5, output_col)
+tidy_regression(m6, output_col) 
+tidy_regression(m7, output_col)
+tidy_regression(m8, output_col)  
+```
+
+**Site, Median_BL_c, Elevation_c**
+
+```{r}
+data<-data.frame(
+  R=ocos$logNodes,
+  A=ocos$Site,
+  B=ocos$Median_BL_c, 
+  C=ocos$Elevation_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+```{r}
+anova(m6, m10, test="Chisq") # Adding B*C does not improve fit
+anova(m6, m7, test="Chisq") # Adding A does not improve fit
+anova(m4, m6, test="Chisq") # Replacing A with C does not improve fit
+anova(m2, m6, test="Chisq") # Adding C does improve fit
+
+anova(m1, m4, test="Chisq") # Adding B does not improve fit
+anova(m2, m4, test="Chisq") # Adding A does improve fit
+```
+**Site, Median_BL_c, Elevation_c, Arroyo_c**
+
+```{r}
+data<-data.frame(
+  R=ocos$logNodes,
+  A=ocos$Site,
+  B=ocos$Median_BL_c, 
+  C=ocos$Elevation_c,
+  D=ocos$Arroyo_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
+```
+```{r}
+anova(m8, m19, test="Chisq") # Adding B*C does not improve fit
+```
+```{r}
+summary(m8)
+```
+
+### Bajada
+
+```{r}
+m1 = lm(NumNodes_c ~ BL_IQR_c, data=ocos_baj) 
+m2 = lm(logNodes ~ BL_IQR_c, data=ocos_baj) 
+m3 = lm(logNodes ~ TSegIQR_c, data=ocos_baj) # marginal
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m3, output_col) 
+```
+
+**Median_BL_c, TSegIQR_c, BL_IQR_c**
+
+```{r}
+temp = ocos_baj[-1,]
+data<-data.frame(
+  R=temp$logNodes,
+  A=temp$Median_BL_c, 
+  B=temp$TSegIQR_c,
+  C=temp$BL_IQR_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+```{r}
+anova(m5, m7, test="Chisq") # Adding B marginally improves fit
+anova(m4, m7, test="Chisq") # Adding C marginally improves fit
+anova(m7, m11, test="Chisq") # Adding A*B does not improve fit
+anova(m2, m4, test="Chisq") # Adding B improves fit
+anova(m1, m4, test="Chisq") # Adding A improves fit
+anova(m3, m5, test="Chisq") # Adding A improves fit
+anova(m1, m5, test="Chisq") # ADding C improves fit
+```
+```{r}
+summary(m5) # best fit
+```
+
+```{r}
+plot(logNodes ~ Median_BL_c, data=temp)
+plot(logNodes ~ TSegIQR_c, data=temp)
+plot(logNodes ~ BL_IQR_c, data=temp)
+```
+
+## Median Branch Length
+
+### All Ocos
+
+**Testing Covariates** 
+
+Only significant covariates are listed below:
+
+```{r}
+m1 = lm(Median_BL_c ~ NumNodes_c, data=ocos) 
+m2 = lm(logMedian_BL ~ NumNodes_c, data=ocos)
+m3 = lm(Median_BL_c ~ TSegIQR_c, data=ocos[-1,])
+m4 = lm(logMedian_BL ~ TSegIQR_c, data=ocos[-1,])
+m5 = lm(Median_BL_c ~ Site, data=ocos) 
+m6 = lm(logMedian_BL ~ Site, data=ocos) 
+m7 = lm(Median_BL_c ~ Height_c, data=ocos) 
+m8 = lm(logMedian_BL ~ Height_c, data=ocos) 
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m3, output_col) 
+tidy_regression(m4, output_col) 
+tidy_regression(m5, output_col)
+tidy_regression(m6, output_col) 
+tidy_regression(m7, output_col)
+tidy_regression(m8, output_col)  
+```
+
+**Site, NumNodes_c, Height_c, TSegIQR_c**
+
+```{r}
+temp = ocos[-1,]
+data<-data.frame(
+  R=temp$logMedian_BL,
+  A=temp$Site,
+  B=temp$Height_c, 
+  C=temp$TSegIQR_c,
+  D=temp$NumNodes_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
+```
+```{r}
+anova(m14, m15, test="Chisq") # Adding A does not improve fit
+summary(m14)
+plot(logMedian_BL ~ Terminal_SegIQR, data=temp, xlab="Terminal Segment Length IQR (cm)", ylab="Log(Median Branch Length) (cm)")
+```
+
+### Bajada Ocos
+
+**Testing Covariates** 
+
+Only significant covariates are listed below:
+
+```{r}
+m1 = lm(Median_BL_c ~ NumNodes_c, data=ocos_baj) 
+m2 = lm(logMedian_BL ~ NumNodes_c, data=ocos_baj)
+m3 = lm(Median_BL_c ~ TSegIQR_c, data=ocos_baj[-1,])
+m4 = lm(logMedian_BL ~ TSegIQR_c, data=ocos_baj[-1,])
+m5 = lm(Median_BL_c ~ Height_c, data=ocos_baj) 
+m6 = lm(logMedian_BL ~ Height_c, data=ocos_baj) 
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m3, output_col) 
+tidy_regression(m4, output_col) 
+tidy_regression(m5, output_col)
+tidy_regression(m6, output_col)  
+```
+
+**NumNodes_c, Height_c, TSegIQR_c**
+
+```{r}
+temp = ocos_baj[-1,]
+data<-data.frame(
+  R=temp$logMedian_BL,
+  A=temp$Height_c, 
+  B=temp$TSegIQR_c,
+  C=temp$NumNodes_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+```{r}
+anova(m7, m12, test="Chisq") # Adding A*C does not improve fit
+anova(m6, m7, test="Chisq") # Adding A marginally improves fit
+anova(m5, m7, test="Chisq") # Adding B improves fit
+anova(m4, m7, test="Chisq") # Adding C improves fit
+```
+```{r}
+summary(m6)
+```
+
 
 # Mixed Effect Modeling of Ocotillo Terminal Segments
 
@@ -1016,10 +1226,12 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
+all_data = clean_data("data/General_Oco_Data2.csv", "data/Terminal_5Segs.csv")
 
-seg_baj = all_data[[1]][[1]]
-segs = all_data[[1]][[2]]
+ocos = all_data[[2]]
+ocos_baj = ocos[1:20,]
+segs = all_data[[1]]
+seg_baj = segs[1:1000,] 
 
 segs <- segs[!is.na(segs$Length_c),]
 ```
@@ -1086,17 +1298,54 @@ Dropped branch_num as a random factor to better help the model fit the data.
 
 Only significant covariates are listed below (most are marginal in this case):
 
+```{r}
+segs = segs[segs$Tree != 1,]
+```
+
 ```{r echo=FALSE}
 m1 = lmer(Length_c ~ Height_c + (1|Tree) + (1|seg_num), data=segs)
 m2 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=segs) 
 m3 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=segs)
+m4 = lmer(Length_c ~ NumNodes_c + (1|Tree) + (1|seg_num), data=segs)
+m5 = lmer(Length_c ~ BL_IQR_c + (1|Tree) + (1|seg_num), data=segs)
 
 # lmer(Length_c ~ X1m_type2 + (1|Tree) + (1|seg_num), data=segs) also significant but it does not answer our question on how the number and types of small potential competitors affect terminal segment length.
 
-tidy_regression(m1, output_col) 
-tidy_regression(m2, output_col)
-tidy_regression(m3, output_col)
+tidy_regression(m1, output_col) # not sig if remove Plant 1
+tidy_regression(m2, output_col) # not sig if remove Plant 1 
+tidy_regression(m3, output_col) 
+tidy_regression(m4, output_col)
+tidy_regression(m5, output_col)
 ```
+
+**R1m_shrub2cactus, NumNodes_c,BL_IQR_c **
+
+```{r}
+data<-data.frame(
+  R=segs$Length_c,
+  A=segs$R1m_shrub2cactus, 
+  B=segs$NumNodes_c, 
+  C=segs$BL_IQR_c,
+  X=segs$Tree,
+  Y=segs$seg_num)
+
+# Fit the models to the same number of observations by filtering out NA values:
+data <- data[complete.cases(data),]
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
+```
+```{r}
+anova(m6, m10, test="Chisq") # Adding B*C does improve fit
+summary(m10)
+```
+
+
+```{r}
+plot(segs$NumNodes, segs$Length)
+plot(segs$BL_IQR, segs$Length)
+```
+
 
 **Plot diagnostics**
 

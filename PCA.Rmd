@@ -13,6 +13,7 @@ require(factoextra)
 require(corrplot)
 require(readr)
 library(corrplot)
+library(rethinking)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -30,18 +31,17 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
+all_data = clean_data("data/General_Oco_Data2.csv", "data/Terminal_5Segs.csv")
 
 ocos = all_data[[2]]
-ocos_baj = ocos[ocos$Plant[1:20],]
-
-seg_baj = all_data[[1]][[1]]
-segs = all_data[[1]][[2]]
+ocos_baj = ocos[1:20,]
+segs = all_data[[1]]
+seg_baj = segs[1:1000,] 
 
 segs <- segs[!is.na(segs$Length_c),]
 ```
 
-**Oultier Visualization**
+**Outlier Visualization**
 
 ```{r}
 c1 = 1.2 * 1.2
@@ -50,10 +50,10 @@ c3 = 1.5 * 1.2
 c4 = 1.1 * 1.2
 ```
 
-```{r}
+```{r fig.height=2.5, fig.width=2.8}
 outlier = ocos[-1,]
-x=d[,"TSegIQR_c"]
-y=d[,"logHeight"] 
+x=outlier[,"TSegIQR_c"]
+y=outlier[,"logHeight"] 
 
 m <- lm(logHeight ~ TSegIQR_c, data=outlier)
 x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
@@ -83,7 +83,7 @@ legend(7,1,
        title="Site Type")
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
-pval <- paste0("p = ", round(summary(m)$coefficients[8],3))
+pval <- paste0("p = ", round(summary(m)$coefficients[8],2))
 text(1, 1.5, pval, cex=c1)
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 
@@ -242,6 +242,40 @@ corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.0
 corrplot.mixed(D,lower.col = "black", number.cex = .7)
 ```
 
+**Final Choices **
+
+Without IQR Vars:
+
+```{r fig.height=2.5, fig.width=2.6}
+# Plant 1 Removed | Without IQR Vars
+
+d = growthForm[-1, c(-5,-6)]
+PCA_graphs(d)
+
+colnames(d) = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
+D = cor(d)
+test <- cor.mtest(d)$p
+corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+corrplot.mixed(D,lower.col = "black", number.cex = .7)
+```
+
+With IQR Vars:
+
+```{r fig.height=2.5, fig.width=2.6}
+# Plant 1 Removed 
+
+d = growthForm[-1, ]
+PCA_graphs(d)
+
+colnames(d) = c("Height", "Circ", "NB", "M TSL", "TSL IQR", "BL IQR", "M BL", "Nodes")
+D = cor(d)
+test <- cor.mtest(d)$p
+corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+corrplot.mixed(D,lower.col = "black", number.cex = .7)
+```
+
+Acacia: This PCA suggests that there is a lot of variation around range, so much so that it apparently drives the PCA when you add it in.
+
 **Regressions**
 
 ```{r}
@@ -249,6 +283,7 @@ ocos = all_data[[2]]
 ```
 
 ```{r}
+# add new variables
 ocos$BL_IQR = growthForm$Branch.Length.IQR
 ocos$Median_BL = growthForm$Median.Branch.Length
 ocos$NumNodes = growthForm$Number.Nodes
@@ -262,6 +297,11 @@ Only significant covariates are listed below:
 
 ```{r}
 ocos = ocos[-1,]
+
+# center variables
+ocos$BL_IQR_c = ocos$BL_IQR - mean(ocos$BL_IQR, na.rm=TRUE)
+ocos$Median_BL_c = ocos$Median_BL - mean(ocos$Median_BL, na.rm=TRUE)
+ocos$NumNodes_c = ocos$NumNodes - mean(ocos$NumNodes, na.rm=TRUE)
 ```
 
 ```{r echo=FALSE}
@@ -270,12 +310,12 @@ m2 = lm(Height_c ~ Site, data=ocos)
 m3 = lm(logHeight ~ Site, data=ocos)
 m4 = lm(Height_c ~ TSegIQR_c, data=ocos)
 m5 = lm(logHeight ~ TSegIQR_c, data=ocos)
-m6 = lm(Height ~ BL_IQR, data=ocos)
-m7 = lm(logHeight ~ BL_IQR, data=ocos)
-m8 = lm(Height ~ Median_BL, data=ocos)
-m9 = lm(logHeight ~ Median_BL, data=ocos)
-m10 = lm(Height ~ NumNodes, data=ocos)
-m11 = lm(logHeight ~ NumNodes, data=ocos)
+m6 = lm(Height ~ BL_IQR_c, data=ocos)
+m7 = lm(logHeight ~ BL_IQR_c, data=ocos)
+m8 = lm(Height ~ Median_BL_c, data=ocos)
+m9 = lm(logHeight ~ Median_BL_c, data=ocos)
+m10 = lm(Height ~ NumNodes_c, data=ocos)
+m11 = lm(logHeight ~ NumNodes_c, data=ocos)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
@@ -301,42 +341,52 @@ data<-data.frame(
   R=ocos$logHeight,
   A=ocos$Site,
   B=ocos$Elevation_c, 
-  C=ocos$Median_BL) 
+  C=ocos$Median_BL_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 ```
+
+```{r}
+anova(m5, m7, test="Chisq") # Adding B does not improve fit
+anova(m3, m5, test="Chisq") # Adding A does improve fit
+anova(m1, m5, test="Chisq") # Adding C does improve fit
+```
+
 ```{r}
 summary(m5)
 ```
 
-**Site, NumNodes, TSeg_c**
+**Site, NumNodes_c, TSeg_c**
 
 ```{r}
 data<-data.frame(
   R=ocos$logHeight,
   A=ocos$Site,
-  B=ocos$NumNodes, 
-  C=ocos$Median_BL) 
+  B=ocos$NumNodes_c, 
+  C=ocos$Median_BL_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 ```
 ```{r}
 anova(m5, m7, test="Chisq") # Adding B does not improve fit
+anova(m3, m5, test="Chisq") # Adding A improves fit
+anova(m1, m5, test="Chisq") # Adding C improves fit
 ```
 
+```{r fig.width=6, fig.height=2.7}
 
-```{r fig.width=2.1, fig.height=5.18}
-
-par(mfrow=c(3,1))
+par(mfrow=c(1,2))
 ###### Plot A
 
+ocos$Median_BL_m = ocos$Median_BL/100
+
 d = ocos
-x=d[,"Median_BL"]
+x=d[,"Median_BL_m"]
 y=d[,"logHeight"] 
 
-m <- lm(logHeight ~ Median_BL, data=ocos)
+m <- lm(logHeight ~ Median_BL_m, data=ocos)
 x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
 m <- lm(y ~ x, data=ocos)
 prd <- data.frame(x=x.seq) # newdata
@@ -347,16 +397,16 @@ prd$uci <- err$fit + 1.96 * err$se.fit
 mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 
 colfunc <- colorRampPalette(c("red", "orange"))
-plot(ocos$logHeight ~ ocos$Median_BL, 
+plot(ocos$logHeight ~ ocos$Median_BL_m, 
      col=colfunc(2)[as.factor(ocos$Site)], 
      pch = c(17:16)[as.factor(ocos$Site)],
-     xlab = "Median Branch Length (cm)",
+     xlab = "Median Branch Length (m)",
      ylab= "Log(Height) (m)", 
      cex=c2,
      cex.lab=c3,
      cex.axis=c2,
      bty="n") 
-legend(300,0.95,
+legend(300/100,0.95,
        legend = c("Bajada", "Plain"),
        col= c(colfunc(2)[1], colfunc(2)[2]),
        pch = c(17:16),
@@ -365,8 +415,144 @@ legend(300,0.95,
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],5), "*")
-text(240, 1.25, pval, cex=c1)
+text(240/100, 1.25, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
 title("(a)", adj = 0.05, line = 0, cex.main=c3)
+
+###### Plot B
+
+par(bty = 'n')
+boxplot(logHeight~Site,
+        data=ocos,
+        xlab = "Site",
+        ylab= "Log(Height) (m)",
+        col=c(col.alpha( "red" , alpha = 0.4 ), 
+              col.alpha( "orange" , alpha = 0.4)),
+        border="gray30",
+        names=c("Bajada", "Plain"),
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2
+)
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
+
+```
+
+### Bajada Ocos
+
+```{r}
+ocos = all_data[[2]]
+ocos_baj = ocos[ocos$Plant[1:20],]
+```
+
+```{r}
+# add new variables
+ocos$BL_IQR = growthForm$Branch.Length.IQR
+ocos$Median_BL = growthForm$Median.Branch.Length
+ocos$NumNodes = growthForm$Number.Nodes
+```
+
+
+**Testing Covariates**
+
+Only significant covariates are listed below:
+
+```{r}
+ocos_baj = ocos[1:20,]
+ocos_baj = ocos[2:20,]
+
+# center variables
+ocos_baj$BL_IQR_c = ocos_baj$BL_IQR - mean(ocos_baj$BL_IQR, na.rm=TRUE)
+ocos_baj$Median_BL_c = ocos_baj$Median_BL - mean(ocos_baj$Median_BL, na.rm=TRUE)
+ocos_baj$NumNodes_c = ocos_baj$NumNodes - mean(ocos_baj$NumNodes, na.rm=TRUE)
+```
+
+```{r echo=FALSE}
+m1 = lm(Height_c ~ TSegIQR_c, data=ocos_baj) # not sig after remove outlier
+m2 = lm(logHeight ~ TSegIQR_c, data=ocos_baj) # not sig after remove outlier
+m3 = lm(Height ~ Median_BL, data=ocos_baj)
+m4 = lm(logHeight ~ Median_BL, data=ocos_baj)
+m5 = lm(Height ~ BL_IQR, data=ocos_baj) # not sig after remove outlier
+m6 = lm(logHeight ~ BL_IQR, data=ocos_baj) # not sig after remove outlier
+
+tidy_regression(m1, output_col) 
+tidy_regression(m2, output_col)
+tidy_regression(m3, output_col)
+tidy_regression(m4, output_col)
+tidy_regression(m5, output_col)
+tidy_regression(m6, output_col)
+```
+
+**Model Comparisons**
+
+**NumNodes, Elevation_c, Median_BL**
+
+```{r}
+data<-data.frame(
+  R=ocos_baj$logHeight,
+  A=ocos_baj$NumNodes_c,
+  B=ocos_baj$Elevation_c, 
+  C=ocos_baj$Median_BL_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+```{r}
+anova(m3, m5, test="Chisq") # Adding A does improve fit
+anova(m3, m6, test="Chisq") # Adding B does not improve fit
+```
+```{r}
+summary(m3)
+```
+
+
+
+
+
+
+Extra:
+
+
+```{r fig.width=6, fig.height=2.7}
+
+par(mfrow=c(1,2))
+###### Plot C
+
+d = ocos_baj
+x=d[,"Median_BL"]
+y=d[,"logHeight"] 
+
+m <- lm(logHeight ~ Median_BL, data=ocos_baj)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos_baj)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(ocos_baj$logHeight ~ ocos_baj$Median_BL, 
+     col=colfunc(2)[as.factor(ocos_baj$Site)], 
+     pch = c(17:16)[as.factor(ocos_baj$Site)],
+     xlab = "Median Branch Length (cm)",
+     ylab= "Log(Height) (m)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n") 
+legend(110,0.85,
+       legend = c("Bajada", "Plain"),
+       col= c(colfunc(2)[1], colfunc(2)[2]),
+       pch = c(17:16),
+       cex=c4,
+       title="Site Type")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],2))
+text(100, 1, pval, cex=c1)
+title("(c)", adj = 0.05, line = 0, cex.main=c3)
 
 ###### Plot B
 
@@ -406,117 +592,6 @@ pval <- paste0("p = ", round(summary(m)$coefficients[8],2), "*")
 text(100, 1.4, pval, cex=c1)
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 
-###### Plot C
-
-ocos_baj = ocos[2:20,]
-d = ocos_baj
-x=d[,"BL_IQR"]
-y=d[,"logHeight"] 
-
-m <- lm(logHeight ~ BL_IQR, data=ocos_baj)
-x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
-m <- lm(y ~ x, data=ocos_baj)
-prd <- data.frame(x=x.seq) # newdata
-err <- predict(m, newdata = prd, se.fit = TRUE)
-prd$lci <- err$fit - 1.96 * err$se.fit
-prd$fit <- err$fit
-prd$uci <- err$fit + 1.96 * err$se.fit
-mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
-
-colfunc <- colorRampPalette(c("red", "orange"))
-plot(ocos_baj$logHeight ~ ocos_baj$BL_IQR, 
-     col=colfunc(2)[as.factor(ocos_baj$Site)], 
-     pch = c(17:16)[as.factor(ocos_baj$Site)],
-     xlab = "Median Branch Length (cm)",
-     ylab= "Log(Height) (m)", 
-     cex=c2,
-     cex.lab=c3,
-     cex.axis=c2,
-     bty="n") 
-legend(110,0.85,
-       legend = c("Bajada", "Plain"),
-       col= c(colfunc(2)[1], colfunc(2)[2]),
-       pch = c(17:16),
-       cex=c4,
-       title="Site Type")
-abline(m, lty=2)
-shade(mu_ci, lim = prd$x)
-pval <- paste0("p = ", round(summary(m)$coefficients[8],2))
-text(100, 1, pval, cex=c1)
-title("(c)", adj = 0.05, line = 0, cex.main=c3)
 
 ```
 
-### Bajada Ocos
-
-```{r}
-ocos = all_data[[2]]
-ocos_baj = ocos[ocos$Plant[1:20],]
-```
-
-```{r}
-ocos$BL_IQR = growthForm$Branch.Length.IQR
-ocos$Median_BL = growthForm$Median.Branch.Length
-ocos$NumNodes = growthForm$Number.Nodes
-```
-
-**Testing Covariates**
-
-Only significant covariates are listed below:
-
-```{r}
-ocos_baj = ocos[1:20,]
-ocos_baj = ocos[2:20,]
-```
-
-```{r echo=FALSE}
-m1 = lm(Height_c ~ TSegIQR_c, data=ocos_baj) # not sig after remove outlier
-m2 = lm(logHeight ~ TSegIQR_c, data=ocos_baj) # not sig after remove outlier
-m3 = lm(Height ~ Median_BL, data=ocos_baj)
-m4 = lm(logHeight ~ Median_BL, data=ocos_baj)
-m5 = lm(Height ~ BL_IQR, data=ocos_baj) # not sig after remove outlier
-m6 = lm(logHeight ~ BL_IQR, data=ocos_baj) # not sig after remove outlier
-
-tidy_regression(m1, output_col) 
-tidy_regression(m2, output_col)
-tidy_regression(m3, output_col)
-tidy_regression(m4, output_col)
-tidy_regression(m5, output_col)
-tidy_regression(m6, output_col)
-```
-
-**Model Comparisons**
-
-**site, Elevation_c, Median_BL**
-
-```{r}
-data<-data.frame(
-  R=ocos$logHeight,
-  A=ocos$Site,
-  B=ocos$Elevation_c, 
-  C=ocos$Median_BL) 
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
-```
-```{r}
-anova(m5, m7, test="Chisq") # Adding B does not improve fit
-```
-
-**site, NumNodes, Median_BL**
-
-```{r}
-data<-data.frame(
-  R=ocos$logHeight,
-  A=ocos$Site,
-  B=ocos$NumNodes, 
-  C=ocos$Median_BL) 
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
-```
-
-```{r}
-anova(m7, m13, test="Chisq") # adding B*C does not improve fit
-anova(m5, m7, test="Chisq") # Adding B does not improve fit | marginal
-```

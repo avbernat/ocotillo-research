@@ -26,13 +26,12 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
+all_data = clean_data("data/General_Oco_Data2.csv", "data/Terminal_5Segs.csv")
 
 ocos = all_data[[2]]
-ocos_baj = ocos[ocos$Plant[1:20],]
-
-seg_baj = all_data[[1]][[1]]
-segs = all_data[[1]][[2]]
+ocos_baj = ocos[1:20,]
+segs = all_data[[1]]
+seg_baj = segs[1:1000,] 
 
 segs <- segs[!is.na(segs$Length_c),]
 ```
@@ -446,3 +445,89 @@ text(32, 1.3, pval, cex=c1)
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ```
 
+```{r fig.width=6, fig.height=2.7}
+
+c1 = 1.2 * 1.2
+c2 = 1.3 * 1.2
+c3 = 1.5 * 1.2
+c4 = 1.1 * 1.2
+
+par(mfrow=c(1,2))
+###### Plot A
+
+ocos$Median_BL_m = ocos$Median_BranchLength / 100
+
+d = ocos
+x=d[,"Median_BL_m"]
+y=d[,"logNodes"] 
+
+m <- lm(logNodes ~ Median_BL_m, data=ocos)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(ocos$logNodes ~ ocos$Median_BL_m, 
+     col=colfunc(2)[as.factor(ocos$Site)], 
+     pch = c(17:16)[as.factor(ocos$Site)],
+     xlab = "Median Branch Length (m)",
+     ylab= "Log(Number of Nodes)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n") 
+legend(315/100,5,
+       legend = c("Bajada", "Plain"),
+       col= c(colfunc(2)[1], colfunc(2)[2]),
+       pch = c(17:16),
+       cex=c4,
+       title="Site Type")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(240/100, 5.4, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
+title("(a)", adj = 0.05, line = 0, cex.main=c3)
+
+###### Plot B
+d = ocos
+x=d[,"Median_BL_m"]
+y=d[,"logNodes"] 
+
+m <- lm(logNodes ~ Median_BL_m, data=ocos)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("black", "grey"))
+plot(ocos$logNodes ~ ocos$Median_BL_m, 
+     col=colfunc(20)[as.factor(ocos_baj$Elevation)],
+     pch=(16),
+     xlab = "Median Branch Length (m)",
+     ylab= "Log(Number of Nodes)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     bty="n") 
+legend(315/100,5.1,
+       legend = c("+561", "546-560", "531-545", "516-530", "500-515"),
+       #legend = c("500-515", "516-530", "531-545", "546-560", "+561"),
+       col= c(colfunc(20)[1], colfunc(20)[5], colfunc(20)[9], colfunc(20)[13], colfunc(20)[20]),
+       pch = c(16),
+       cex=c4,
+       title="Elevation (m)")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(240/100, 5.4, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
+title("(b)", adj = 0.05, line = 0, cex.main=c3)
+```
