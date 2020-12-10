@@ -1,6 +1,6 @@
 ---
 title: "Ocotillo Morphology Summary Statistics"
-author: "Regressions and Kruskal-Wallis by Anastasia Bernat | PCA by Acacia Tsz So Tang"
+author: "Anastasia Bernat"
 output:
   html_document: default
   pdf_document: default
@@ -103,8 +103,25 @@ rename_regformula = function (eqs, response_var, predA, predB, predC, predD) {
 }
 ```
 
+## Normality
+
+All measurements followed log-normal distributions except for circumference, median branch length, number of nodes, and distance to the nearest arroyo, which were normally distributed. Ocotillo data were log-transformed before analyses to meet assumptions of normality, linear regressions, and homogeneity for parametric analyses.
 
 ## Height 
+
+### Outlier Case
+
+When model comparisons are conducted with the full ocos dataset, the best fit model includes site and terminal segment length IQR as predictors to logHeight. However, terminal segment length IQR has an outlier - Ocotillo 1 (see graphs.Rmd). In turn, the outlier was removed and logHeight is predicted with a smaller dataset containing all ocotillos except Ocotillo 1.
+
+```{r}
+ocos = ocos[-1,]
+
+# center variables
+ocos$TSegIQR_c = ocos$Terminal_SegIQR - mean(ocos$Terminal_SegIQR, na.rm=TRUE)
+ocos$BL_IQR_c = ocos$BranchLength_IQR - mean(ocos$BranchLength_IQR, na.rm=TRUE)
+ocos$Median_BL_c = ocos$Median_BranchLength - mean(ocos$Median_BranchLength, na.rm=TRUE)
+ocos$NumNodes_c = ocos$Num_Nodes - mean(ocos$Num_Nodes, na.rm=TRUE)
+```
 
 ### All Ocos
 
@@ -116,14 +133,18 @@ Only significant covariates are listed below:
 m1 = lm(logHeight ~ Elevation_c, data=ocos)
 m2 = lm(Height_c ~ Site, data=ocos)
 m3 = lm(logHeight ~ Site, data=ocos)
-m4 = lm(Height_c ~ TSegIQR_c, data=ocos)
-m5 = lm(logHeight ~ TSegIQR_c, data=ocos)
+m4 = lm(Height ~ Median_BL_c, data=ocos)
+m5 = lm(logHeight ~ Median_BL_c, data=ocos)
+m6 = lm(Height ~ NumNodes_c, data=ocos)
+m7 = lm(logHeight ~ NumNodes_c, data=ocos)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
 tidy_regression(m3, output_col)
 tidy_regression(m4, output_col) 
 tidy_regression(m5, output_col)
+tidy_regression(m6, output_col)
+tidy_regression(m7, output_col)
 ```
 
 **Make Diagnostic Plots**
@@ -136,18 +157,20 @@ plot_diagnostic(m1, ocos)
 #plot_diagnostic(m3, ocos) # categorical covariate
 plot_diagnostic(m4, ocos)
 plot_diagnostic(m5, ocos)
+plot_diagnostic(m6, ocos)
+plot_diagnostic(m7, ocos)
 ```
 
 **Model Comparisons**
 
-**site, Elevation_c, TSeg_c**
+**site, Elevation_c, Median_BL**
 
 ```{r}
 data<-data.frame(
   R=ocos$logHeight,
   A=ocos$Site,
   B=ocos$Elevation_c, 
-  C=ocos$TSegIQR_c) 
+  C=ocos$Median_BL_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
@@ -160,11 +183,10 @@ cor(ocos$Site, ocos$Elevation_c)
 Elevation and site were highly correlated (R = -0.85), which led to multicollinearity. In turn, we removed any interactions between elevation and site in the model comparison process in order to minimize relationships that were spurious. This eliminated m11 and m15 as the top models.
 
 ```{r}
-anova(m7, m13, test='Chisq') # adding B*C does not improve fit
-anova(m5, m7, test='Chisq') # Adding B does not improve fit
-anova(m4, m7, test='Chisq') # Adding C does improve fit
-anova(m1, m4, test='Chisq') # Adding B does not improve fit
-anova(m3, m5, test='Chisq') # Adding C does improve fit
+anova(m7, m11, test="Chisq") # Adding A*B marginally improves fit
+anova(m5, m7, test="Chisq") # Adding B does not improve fit
+anova(m3, m5, test="Chisq") # Adding A does improve fit
+anova(m1, m5, test="Chisq") # Adding C does improve fit | m5 is the best fit model
 ```
 
 **Plot diagnostics**
@@ -174,9 +196,26 @@ All passed. Residuals are independent.
 ```{r}
 plot_diagnostic(m5, ocos)
 plot_diagnostic(m7, ocos)
-plot_diagnostic(m4, ocos)
-# plot_diagnostic(m1, ocos) # categorical covariate
 plot_diagnostic(m3, ocos)
+# plot_diagnostic(m1, ocos) # categorical covariate
+```
+
+**Site, NumNodes_c, TSeg_c**
+
+```{r}
+data<-data.frame(
+  R=ocos$logHeight,
+  A=ocos$Site,
+  B=ocos$NumNodes_c, 
+  C=ocos$Median_BL_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+```{r}
+anova(m5, m7, test="Chisq") # Adding B does not improve fit
+anova(m3, m5, test="Chisq") # Adding A improves fit
+anova(m1, m5, test="Chisq") # Adding C improves fit
 ```
 
 **Calculate likelihood and weights**
@@ -186,121 +225,128 @@ plot_diagnostic(m3, ocos)
 
 delta1 = 0 # abs(AIC(m5) - AIC(m5))
 delta2 = abs(AIC(m5) - AIC(m7))
-delta3 = abs(AIC(m5) - AIC(m4))
-delta4 = abs(AIC(m5) - AIC(m1))
-delta5 = abs(AIC(m5) - AIC(m3))
+delta3 = abs(AIC(m5) - AIC(m1))
+delta4 = abs(AIC(m5) - AIC(m3))
 
 me1 <- exp( -0.5 * delta1)
 me2 <- exp( -0.5 * delta2)
 me3 <- exp( -0.5 * delta3)
 me4 <- exp( -0.5 * delta4)
-me5 <- exp( -0.5 * delta5)
 
 # Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
 
-sum <- sum(c(me1, me2, me3, me4, me5))
+sum <- sum(c(me1, me2, me3, me4))
 
 weight1 = me1 / (sum) 
 weight2 = me2 / (sum)
 weight3 = me3 / (sum)
 weight4 = me4 / (sum)
-weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_tableH = round(cbind(c(AIC(m5), AIC(m7), AIC(m4), AIC(m1), AIC(m3)),
-                                  c(delta1, delta2, delta3, delta4, delta5), 
-                                  c(me1, me2, me3, me4, me5), 
-                                  c(weight1, weight2, weight3, weight4, weight5)), 3)
+summary_tableH = round(cbind(c(AIC(m5), AIC(m7), AIC(m1), AIC(m3)),
+                                  c(delta1, delta2, delta3, delta4), 
+                                  c(me1, me2, me3, me4), 
+                                  c(weight1, weight2, weight3, weight4)), 3)
 
 eq1 = paste(m5$call)[2]
 eq2 = paste(m7$call)[2]
 eq3 = paste(m4$call)[2]
 eq4 = paste(m1$call)[2]
-eq5 = paste(m3$call)[2]
 
-equations = c(eq1, eq2, eq3, eq4, eq5)
-equations = rename_regformula(equations, "logHeight", "Site", "Elevation_c", "TSeq_c")
+equations = c(eq1, eq2, eq3, eq4)
+equations = rename_regformula(equations, "logHeight", "Site", "Elevation", "Median_BranchLength")
 
 summary_tableH = cbind(equations, summary_tableH)
 colnames(summary_tableH) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+summary_tableH[2,] = gsub("Median_ElevationranchLength", "Median_BranchLength", summary_tableH[2,])
 ```
 
 ```{r}
 summary_tableH
 ```
+
 ```{r}
 # Best fit model summary
-cf <- round(coef(m5), 2) 
+cf <- round(coef(m5), 3) 
 eqH <- paste0("logHeight = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Site ",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " TSegIQR_c")
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Site",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Median_BranchLength")
 
-commentH = "Site and TSegIQR_c"
+commentH = "Site, Median_BranchLength"
 rowH = cbind(eqH, commentH)
 colnames(rowH) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowH
 ```
 
+### t-test (Height vs. Site)
 
 ```{r}
+ocos = all_data[[2]] # significant difference exists even if Plant 1 is removed
 t.test(ocos$Height~ocos$Site)
 t.test(ocos$logHeight~ocos$Site)
 ```
 
-
 ### Bajada Ocos
+
+```{r}
+# removing Ocotillo 1
+ocos_baj = ocos[2:20,] 
+
+# re-center variables
+ocos_baj$TSegIQR_c = ocos_baj$Terminal_SegIQR - mean(ocos_baj$Terminal_SegIQR, na.rm=TRUE)
+ocos_baj$BL_IQR_c = ocos_baj$BranchLength_IQR - mean(ocos_baj$BranchLength_IQR, na.rm=TRUE)
+ocos_baj$Median_BL_c = ocos_baj$Median_BranchLength - mean(ocos_baj$Median_BranchLength, na.rm=TRUE)
+ocos_baj$NumNodes_c = ocos_baj$Num_Nodes - mean(ocos_baj$Num_Nodes, na.rm=TRUE)
+```
 
 **Testing Covariates**
 
 Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lm(Height_c ~ TSegIQR_c, data=ocos_baj)
-m2 = lm(logHeight ~ TSegIQR_c, data=ocos_baj)
+m1 = lm(Height ~ Median_BL_c, data=ocos_baj)
+m2 = lm(logHeight ~ Median_BL_c, data=ocos_baj)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
 ```
 
+**Make Diagnostic Plots**
+
+All residuals are independent.
+
+```{r}
+plot_diagnostic(m1, ocos_baj)
+plot_diagnostic(m2, ocos_baj)
+```
+
 **Model Comparisons**
 
-**Elevation_c, TSeg_c**
+**NumNodes_c, Elevation_c, Median_BL_c**
 
 ```{r}
 data<-data.frame(
   R=ocos_baj$logHeight,
-  A=ocos_baj$Elevation_c,
-  B=ocos_baj$TSegIQR_c) 
+  A=ocos_baj$NumNodes_c,
+  B=ocos_baj$Elevation_c, 
+  C=ocos_baj$Median_BL_c) 
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 ```
-
 ```{r}
-anova(m0, m2, test="Chisq") # Adding B does improve fit
-anova(m0, m1, test="Chisq") # Adding A does not improve fit
-anova(m2, m3, test="Chisq") # Adding A does not improve fit
-anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
+anova(m3, m5, test="Chisq") # Adding A does not improve fit
+anova(m3, m6, test="Chisq") # Adding B does not improve fit 
 ```
-
-```{r}
-tidy_regression(m2, output_col)
-tidy_regression(m3, output_col)
-tidy_regression(m4, output_col)
-tidy_regression(m1, output_col)
-tidy_regression(m0, output_col)
-```
-
 **Plot diagnostics**
 
 All passed. Residuals are independent.
 
 ```{r}
-plot_diagnostic(m2, ocos_baj)
 plot_diagnostic(m3, ocos_baj)
-plot_diagnostic(m4, ocos_baj)
-plot_diagnostic(m1, ocos_baj)
+plot_diagnostic(m5, ocos_baj)
+plot_diagnostic(m6, ocos_baj) 
 ```
 
 **Calculate likelihood and weights**
@@ -309,67 +355,61 @@ plot_diagnostic(m1, ocos_baj)
 # Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
 
 delta1 = 0 # abs(AIC(m2) - AIC(m2))
-delta2 = abs(AIC(m2) - AIC(m3))
-delta3 = abs(AIC(m2) - AIC(m4))
-delta4 = abs(AIC(m2) - AIC(m1))
-delta5 = abs(AIC(m2) - AIC(m0))
-
+delta2 = abs(AIC(m3) - AIC(m6))
+delta3 = abs(AIC(m3) - AIC(m5))
 
 me1 <- exp( -0.5 * delta1)
 me2 <- exp( -0.5 * delta2)
 me3 <- exp( -0.5 * delta3)
-me4 <- exp( -0.5 * delta4)
-me5 <- exp( -0.5 * delta5)
 
 # Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
 
-sum <- sum(c(me1, me2, me3, me4, me5))
+sum <- sum(c(me1, me2, me3))
 
 weight1 = me1 / (sum) 
 weight2 = me2 / (sum)
 weight3 = me3 / (sum)
-weight4 = me4 / (sum)
-weight5 = me5 / (sum)
 ```
 
 ```{r}
-summary_tableH.B = round(cbind(c(AIC(m2), AIC(m3), AIC(m4), AIC(m1), AIC(m0)),
-                            c(delta1, delta2, delta3, delta4, delta5), 
-                            c(me1, me2, me3, me4, me5), 
-                            c(weight1, weight2, weight3, weight4, weight5)), 3)
+summary_tableH.B = round(cbind(c(AIC(m3), AIC(m6), AIC(m5)),
+                            c(delta1, delta2, delta3), 
+                            c(me1, me2, me3), 
+                            c(weight1, weight2, weight3)), 3)
 
-eq1 = paste(m2$call)[2]
-eq2 = paste(m3$call)[2]
-eq3 = paste(m4$call)[2]
-eq4 = paste(m1$call)[2]
-eq5 = paste(m0$call)[2]
+eq1 = paste(m3$call)[2]
+eq2 = paste(m6$call)[2]
+eq3 = paste(m5$call)[2]
 
-equations = c(eq1, eq2, eq3, eq4, eq5)
-equations = rename_regformula(equations, "logHeight", "Elevation_c", "TSeq_c")
+equations = c(eq1, eq2, eq3)
+equations = rename_regformula(equations, "logHeight", "Number_Nodes", "Elevation", "Median_BranchLength")
 
 summary_tableH.B = cbind(equations, summary_tableH.B)
 colnames(summary_tableH.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+summary_tableH.B[2,] =  gsub("Median_ElevationranchLength", "Median_BranchLength", summary_tableH.B[2,])
 ```
 
 ```{r}
 summary_tableH.B
 ```
 
-Only factor that largely influences ocotillo height is terminal segment length.
-
 ```{r}
 # Best fit model summary
-cf <- round(coef(m2), 2) 
+cf <- round(coef(m3), 3) 
 eqH.B <- paste0("logHeight = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " TSeqIQR_c ")
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Median_BranchLength")
 
-commentH.B = "TSeq_c"
+commentH.B = "Median_BranchLength"
 rowH.B = cbind(eqH.B, commentH.B)
 colnames(rowH.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowH.B
 ```
 
 ## Circumference
+
+```{r}
+ocos = all_data[[2]] # re-reading the full dataset | no outliers here
+```
 
 ### All Ocos 
 
@@ -467,7 +507,7 @@ eq2 = paste(m0$call)[2]
 eq3 = paste(m2$call)[2]
 
 equations = c(eq1, eq2, eq3)
-equations = rename_regformula(equations, "logCirc", "NBranch_c", "Site")
+equations = rename_regformula(equations, "logCirc", "Num_Branch", "Site")
 
 summary_tableC = cbind(equations, summary_tableC)
 colnames(summary_tableC) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -482,9 +522,9 @@ summary_tableC
 # Best fit model summary
 cf <- round(coef(m1), 2) 
 eqC <- paste0("logCirc = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " NBranch_c ")
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Num_Branch")
 
-commentC = "NBranch_c"
+commentC = "Num_Branch"
 rowC = cbind(eqC, commentC)
 colnames(rowC) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowC
@@ -499,7 +539,7 @@ Only significant covariates are listed below:
 ```{r echo=FALSE}
 m1 = lm(Circ_c ~ NBranch_c, data=ocos_baj)
 m2 = lm(logCirc ~ NBranch_c, data=ocos_baj)
-m3 = lm(logCirc ~ X1m_Num4, data=ocos_baj) # AB: although significant is this a meaningful number? 
+m3 = lm(logCirc ~ X1m_Num4, data=ocos_baj) # AB: although significant, this is not a significant number.
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col) 
@@ -576,7 +616,7 @@ eq1 = paste(m1$call)[2]
 eq2 = paste(m0$call)[2]
 
 equations = c(eq1, eq2)
-equations = rename_regformula(equations, "logCirc", "NBranch_c", "X1m_Num4")
+equations = rename_regformula(equations, "logCirc", "Num_Branch", "1m_Num4")
 
 summary_tableC.B = cbind(equations, summary_tableC.B)
 colnames(summary_tableC.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -591,9 +631,9 @@ summary_tableC.B
 # Best fit model summary
 cf <- round(coef(m1), 2) 
 eqC.B <- paste0("logCirc = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " NBranch_c ")
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Num_Branch")
 
-commentC.B = "NBranch_c"
+commentC.B = "Num_Branch"
 rowC.B = cbind(eqC.B, commentC.B)
 colnames(rowC.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowC.B
@@ -723,10 +763,11 @@ eq3 = paste(m6$call)[2]
 eq4 = paste(m5$call)[2]
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformula(equations, "logNB", "Circ_c", "Inter_plant_b", "Inter_Dis_c", "Arroyo_c")
+equations = rename_regformula(equations, "logNumBranch", "Circ", "Inter_Plant_Group", "Inter_Dis", "Arroyo")
 
 summary_tableB = cbind(equations, summary_tableB)
 colnames(summary_tableB) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+summary_tableB[1,] = gsub("Inter_Arroyois", "Inter_Distance", summary_tableB[1,])
 ```
 
 ```{r}
@@ -737,12 +778,12 @@ summary_tableB
 ```{r}
 # Best fit model summary
 cf <- round(coef(m13), 3) 
-eqNB <- paste0("logNB = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Circ_c ",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Inter_Dis_c",
-             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Arroyo_c")
+eqNB <- paste0("logNumBranch = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Circ",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Inter_Distance",
+             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Arroyo_Distance")
 
-commentNB = "Circ_c and Arroyo_c; Inter_Dis_c is marginal (p = 0.79)"
+commentNB = "Circ, Arroyo_Distance"
 rowNB = cbind(eqNB, commentNB)
 colnames(rowNB) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowNB
@@ -984,6 +1025,15 @@ colnames(summary_tableB.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
+summary_tableB.B = gsub("logNB", "logNumBranch", summary_tableB.B)
+summary_tableB.B = gsub("Circ_c", "Circ", summary_tableB.B)
+summary_tableB.B = gsub("Intra_Dis_c", "Intra_Distance", summary_tableB.B)
+summary_tableB.B = gsub("Inter_plant_b", "Inter_Plant_Group", summary_tableB.B)
+summary_tableB.B = gsub("Elevation_c", "Elevation", summary_tableB.B)
+summary_tableB.B = gsub("Arroyo_c", "Arroyo", summary_tableB.B)
+```
+
+```{r}
 summary_tableB.B
 ```
 
@@ -991,17 +1041,19 @@ summary_tableB.B
 ```{r}
 # Best fit model summary
 cf <- round(coef(m2), 2) 
-eqNB.B <- paste0("logNB = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Circ_c ",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Intra_Dis_c",
-             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Inter_plant_b",
-             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Circ_c*Intra_Dis_c")
+eqNB.B <- paste0("logNumBranch = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Circ",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Intra_Distance",
+             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Inter_Plant_Group",
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Circ*Intra_Distance")
 
-commentNB.B = "Circ_c and Circ_c*Intra_Dis_c"
+commentNB.B = "Circ, Circ*Intra_Distance"
 rowNB.B = cbind(eqNB.B, commentNB.B)
 colnames(rowNB.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowNB.B
 ```
+
+### t-test (Number of Branches vs. Interspecific Plant Group)
 
 ```{r}
 t.test(ocos$logNB~ocos$Inter_Plant_Group)
@@ -1015,9 +1067,9 @@ t.test(ocos$logNB~ocos$Inter_Plant_Group)
 Only significant covariates are listed below:
 
 ```{r}
-m1 = lm(NumNodes_c ~ Arroyo_c, data=ocos) # marginally significant
+m1 = lm(NumNodes_c ~ Arroyo_c, data=ocos) # marginally significant 
 m2 = lm(logNodes ~ Arroyo_c, data=ocos) # marginally significant
-m3 = lm(NumNodes_c ~ Elevation_c, data=ocos) # site is what drives this relationship
+m3 = lm(NumNodes_c ~ Elevation_c, data=ocos) # site driving this relationship
 m4 = lm(logNodes ~ Elevation_c, data=ocos) 
 m5 = lm(NumNodes_c ~ Site, data=ocos) 
 m6 = lm(logNodes ~ Site, data=ocos) 
@@ -1032,6 +1084,24 @@ tidy_regression(m5, output_col)
 tidy_regression(m6, output_col) 
 tidy_regression(m7, output_col)
 tidy_regression(m8, output_col)  
+```
+
+**Site, Median_BL_c, Elevation_c, Arroyo_c**
+
+```{r}
+data<-data.frame(
+  R=ocos$logNodes,
+  A=ocos$Site,
+  B=ocos$Median_BL_c, 
+  C=ocos$Elevation_c,
+  D=ocos$Arroyo_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
+```
+
+```{r}
+anova(m8, m19, test="Chisq") # Adding B*C does not improve fit
 ```
 
 **Site, Median_BL_c, Elevation_c**
@@ -1049,30 +1119,81 @@ model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 ```{r}
 anova(m6, m10, test="Chisq") # Adding B*C does not improve fit
 anova(m6, m7, test="Chisq") # Adding A does not improve fit
-anova(m4, m6, test="Chisq") # Replacing A with C does not improve fit
 anova(m2, m6, test="Chisq") # Adding C does improve fit
+anova(m3, m6, test="Chisq") # Adding B does improve fit
 
 anova(m1, m4, test="Chisq") # Adding B does not improve fit
 anova(m2, m4, test="Chisq") # Adding A does improve fit
 ```
-**Site, Median_BL_c, Elevation_c, Arroyo_c**
+
+**Plot diagnostics**
+
+All passed except m2 has that outlier residual. Residuals are independent.
 
 ```{r}
-data<-data.frame(
-  R=ocos$logNodes,
-  A=ocos$Site,
-  B=ocos$Median_BL_c, 
-  C=ocos$Elevation_c,
-  D=ocos$Arroyo_c) 
+plot_diagnostic(m6, ocos)
+plot_diagnostic(m2, ocos) 
+plot_diagnostic(m3, ocos)
+```
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
-```
+**Calculate likelihood and weights**
+
 ```{r}
-anova(m8, m19, test="Chisq") # Adding B*C does not improve fit
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m13) - AIC(m13))
+delta2 = abs(AIC(m6) - AIC(m3))
+delta3 = abs(AIC(m6) - AIC(m2))
+delta4 = abs(AIC(m6) - AIC(m0))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+me4 <- exp( -0.5 * delta4)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3, me4))
+
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
 ```
+
 ```{r}
-summary(m8)
+summary_tableNN = round(cbind(c(AIC(m6), AIC(m3), AIC(m2), AIC(m0)),
+                            c(delta1, delta2, delta3, delta4), 
+                            c(me1, me2, me3, me4), 
+                            c(weight1, weight2, weight3, weight4)),3)
+
+eq1 = paste(m6$call)[2]
+eq2 = paste(m3$call)[2]
+eq3 = paste(m2$call)[2]
+eq4 = paste(m0$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4)
+equations = rename_regformula(equations, "logNumNodes", "Site", "Median_BranchLength", "Elevation")
+
+summary_tableNN = cbind(equations, summary_tableNN)
+colnames(summary_tableNN) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableNN 
+```
+
+```{r}
+# Best fit model summary
+cf <- round(coef(m6), 3) 
+eqNN <- paste0("logNumNodes = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Median_BranchLength",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Elevation")
+
+commentNN = "Median_BranchLength, Elevation"
+rowNN = cbind(eqNN, commentNN)
+colnames(rowNN) = c("Best Fit Model", "Significant Vars (p < 0.05)")
+rowNN
 ```
 
 ### Bajada
@@ -1087,15 +1208,25 @@ tidy_regression(m2, output_col)
 tidy_regression(m3, output_col) 
 ```
 
+```{r}
+# outlier: Ocotillo 1
+ocos_baj = ocos_baj[-1,]
+
+# center variables
+ocos_baj$TSegIQR_c = ocos_baj$Terminal_SegIQR - mean(ocos_baj$Terminal_SegIQR, na.rm=TRUE)
+ocos_baj$BL_IQR_c = ocos_baj$BranchLength_IQR - mean(ocos_baj$BranchLength_IQR, na.rm=TRUE)
+ocos_baj$Median_BL_c = ocos_baj$Median_BranchLength - mean(ocos_baj$Median_BranchLength, na.rm=TRUE)
+ocos_baj$NumNodes_c = ocos_baj$Num_Nodes - mean(ocos_baj$Num_Nodes, na.rm=TRUE)
+```
+
 **Median_BL_c, TSegIQR_c, BL_IQR_c**
 
 ```{r}
-temp = ocos_baj[-1,]
 data<-data.frame(
-  R=temp$logNodes,
-  A=temp$Median_BL_c, 
-  B=temp$TSegIQR_c,
-  C=temp$BL_IQR_c) 
+  R=ocos_baj$logNodes,
+  A=ocos_baj$Median_BL_c, 
+  B=ocos_baj$TSegIQR_c,
+  C=ocos_baj$BL_IQR_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
@@ -1110,14 +1241,74 @@ anova(m1, m4, test="Chisq") # Adding A improves fit
 anova(m3, m5, test="Chisq") # Adding A improves fit
 anova(m1, m5, test="Chisq") # ADding C improves fit
 ```
+
+**Calculate likelihood and weights**
+
 ```{r}
-summary(m5) # best fit
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m13) - AIC(m13))
+delta2 = abs(AIC(m5) - AIC(m1))
+delta3 = abs(AIC(m5) - AIC(m3))
+delta4 = abs(AIC(m5) - AIC(m0))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+me4 <- exp( -0.5 * delta4)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3, me4))
+
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
+```
+
+
+```{r}
+summary_tableNN.B = round(cbind(c(AIC(m5), AIC(m1), AIC(m3), AIC(m0)),
+                            c(delta1, delta2, delta3, delta4), 
+                            c(me1, me2, me3, me4), 
+                            c(weight1, weight2, weight3, weight4)),3)
+
+eq1 = paste(m5$call)[2]
+eq2 = paste(m1$call)[2]
+eq3 = paste(m3$call)[2]
+eq4 = paste(m0$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4)
+equations = rename_regformula(equations, "logNumNodes", "Median_BranchLength", "Terminal_SegLengthIQR", "BranchLengthIQR")
+
+summary_tableNN.B = cbind(equations, summary_tableNN.B)
+colnames(summary_tableNN.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
-plot(logNodes ~ Median_BL_c, data=temp)
-plot(logNodes ~ TSegIQR_c, data=temp)
-plot(logNodes ~ BL_IQR_c, data=temp)
+summary_tableNN.B = gsub("Median_Terminal_SegLengthIQlogNumNodesranchLength", "Median_BranchLength", summary_tableNN.B)
+summary_tableNN.B = gsub("Terminal_SegLengthIQlogNumNodesranchLengthIQlogNumNodes", "Terminal_SegLengthIQR", summary_tableNN.B)
+```
+
+```{r}
+summary_tableNN.B 
+```
+```{r}
+tidy_regression(m5, output_col)
+```
+
+```{r}
+# Best fit model summary
+cf <- round(coef(m5), 3) 
+eqNN.B <- paste0("logNumNodes = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Median_BranchLength",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " BranchLengthIQR")
+
+commentNN.B = "Median_BranchLength, BranchLengthIQR"
+rowNN.B = cbind(eqNN.B, commentNN.B)
+colnames(rowNN.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
+rowNN.B 
 ```
 
 ## Median Branch Length
@@ -1148,20 +1339,30 @@ tidy_regression(m7, output_col)
 tidy_regression(m8, output_col)  
 ```
 
+```{r}
+ocos = ocos[-1,]
+
+# center variables
+ocos$TSegIQR_c = ocos$Terminal_SegIQR - mean(ocos$Terminal_SegIQR, na.rm=TRUE)
+ocos$BL_IQR_c = ocos$BranchLength_IQR - mean(ocos$BranchLength_IQR, na.rm=TRUE)
+ocos$Median_BL_c = ocos$Median_BranchLength - mean(ocos$Median_BranchLength, na.rm=TRUE)
+ocos$NumNodes_c = ocos$Num_Nodes - mean(ocos$Num_Nodes, na.rm=TRUE)
+```
+
 **Site, NumNodes_c, Height_c, TSegIQR_c**
 
 ```{r}
-temp = ocos[-1,]
 data<-data.frame(
-  R=temp$logMedian_BL,
-  A=temp$Site,
-  B=temp$Height_c, 
-  C=temp$TSegIQR_c,
-  D=temp$NumNodes_c) 
+  R=ocos$logMedian_BL,
+  A=ocos$Site,
+  B=ocos$Height_c, 
+  C=ocos$TSegIQR_c,
+  D=ocos$NumNodes_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
 ```
+
 ```{r}
 anova(m14, m15, test="Chisq") # Adding A does not improve fit
 summary(m14)
@@ -1190,15 +1391,25 @@ tidy_regression(m5, output_col)
 tidy_regression(m6, output_col)  
 ```
 
+```{r}
+# outlier: Ocotillo 1
+ocos_baj = ocos_baj[-1,]
+
+# center variables
+ocos_baj$TSegIQR_c = ocos_baj$Terminal_SegIQR - mean(ocos_baj$Terminal_SegIQR, na.rm=TRUE)
+ocos_baj$BL_IQR_c = ocos_baj$BranchLength_IQR - mean(ocos_baj$BranchLength_IQR, na.rm=TRUE)
+ocos_baj$Median_BL_c = ocos_baj$Median_BranchLength - mean(ocos_baj$Median_BranchLength, na.rm=TRUE)
+ocos_baj$NumNodes_c = ocos_baj$Num_Nodes - mean(ocos_baj$Num_Nodes, na.rm=TRUE)
+```
+
 **NumNodes_c, Height_c, TSegIQR_c**
 
 ```{r}
-temp = ocos_baj[-1,]
 data<-data.frame(
-  R=temp$logMedian_BL,
-  A=temp$Height_c, 
-  B=temp$TSegIQR_c,
-  C=temp$NumNodes_c) 
+  R=ocos_baj$logMedian_BL,
+  A=ocos_baj$Height_c, 
+  B=ocos_baj$TSegIQR_c,
+  C=ocos_baj$NumNodes_c) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
@@ -1210,6 +1421,7 @@ anova(m6, m7, test="Chisq") # Adding A marginally improves fit
 anova(m5, m7, test="Chisq") # Adding B improves fit
 anova(m4, m7, test="Chisq") # Adding C improves fit
 ```
+
 ```{r}
 summary(m6)
 ```
@@ -1696,6 +1908,7 @@ tukey <- TukeyHSD(x=model, conf.level=0.95)
 par(mar = c(4, 14, 4, 1) , cex.axis=.7)
 plot(tukey , las=1 , col="brown")
 ```
+
 **By Interspecific Species**
 
 ```{r fig.height=4, fig.width=5.3}
@@ -1837,61 +2050,6 @@ ggplot(segs, aes(Site, Length)) +
   geom_boxplot(width=0.1) +
   theme(text = element_text(size=20)) +
   stat_pvalue_manual(pwc, hide.ns = TRUE)
-```
-
-
-## Principal Component Analysis (PCA)
-
-**Reading the Data**
-
-```{r}
-growthForm <- read.csv("data/growthForm.csv", row.names = 1)
-```
-
-**Investigating Variables**
-
-```{r}
-GFpca <- PCA(growthForm, scale.unit = TRUE, graph = TRUE, ncp = 10)
-eig.val <- get_eigenvalue(GFpca)
-eig.val
-fviz_eig(GFpca, addlabels = TRUE, ylim = c(0, 50))
-```
-
-An eigenvalue > 1 indicates that PCs account for more variance than accounted by one of the original variables in standardized data. This is commonly used as a cutoff point for which PCs are retained. This holds true only when the data are standardized, which we have done.
-
-You can also limit the number of component to that number that accounts for a certain fraction of the total variance. (No formal cut-off)
-
-```{r}
-variables <- get_pca_var(GFpca)
-
-corrplot(variables$cos2, is.corr=FALSE)
-corrplot(variables$contrib, is.corr=FALSE)
-
-GFdim <- dimdesc(GFpca, axes = c(1,2), proba = 0.05)
-GFdim$Dim.1
-GFdim$Dim.2
-```
-
-**Plot by Group**
-
-```{r}
-Groupings <- read_csv("data/Groupings.csv")
-growthForm$Inter_Plant_Group <- Groupings$Inter_Plant_Group
-growthForm$Site <- Groupings$Site
-
-fviz_pca_ind(GFpca,
-             geom.ind = "text",
-             col.ind = growthForm$Inter_Plant_Group,
-             legend.title = "Interspecific Group",
-             addEllipses = TRUE
-)
-
-fviz_pca_ind(GFpca,
-             geom.ind = "text",
-             col.ind = growthForm$Site,
-             legend.title = "Site Type",
-              addEllipses = TRUE
-)
 ```
 
 
