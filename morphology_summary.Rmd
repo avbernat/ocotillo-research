@@ -1365,9 +1365,87 @@ model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
 
 ```{r}
 anova(m14, m15, test="Chisq") # Adding A does not improve fit
-summary(m14)
-plot(logMedian_BL ~ Terminal_SegIQR, data=temp, xlab="Terminal Segment Length IQR (cm)", ylab="Log(Median Branch Length) (cm)")
+anova(m10, m14, test="Chisq") # Adding B improves fit
+anova(m9, m14, test="Chisq") # Adding C improves fit
+anova(m8, m14, test="Chisq") # Adding D improves fit
 ```
+
+**Plot diagnostics**
+
+All passed. Residuals are independent.
+
+```{r}
+plot_diagnostic(m14, ocos)
+plot_diagnostic(m10, ocos) 
+plot_diagnostic(m9, ocos)
+plot_diagnostic(m8, ocos)
+```
+
+**Calculate likelihood and weights**
+
+```{r}
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m13) - AIC(m13))
+delta2 = abs(AIC(m14) - AIC(m10))
+delta3 = abs(AIC(m14) - AIC(m9))
+delta4 = abs(AIC(m14) - AIC(m8))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+me4 <- exp( -0.5 * delta4)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3, me4))
+
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
+```
+
+```{r}
+summary_tableMBL = round(cbind(c(AIC(m14), AIC(m10), AIC(m9), AIC(m8)),
+                            c(delta1, delta2, delta3, delta4), 
+                            c(me1, me2, me3, me4), 
+                            c(weight1, weight2, weight3, weight4)),3)
+
+eq1 = paste(m14$call)[2]
+eq2 = paste(m10$call)[2]
+eq3 = paste(m9$call)[2]
+eq4 = paste(m8$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4)
+equations = rename_regformula(equations, "logMedianBL", "Site", "Height", "TerminalSegIQR", "Num_Nodes")
+
+summary_tableMBL = cbind(equations, summary_tableMBL)
+colnames(summary_tableMBL) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
+```
+
+```{r}
+summary_tableMBL = gsub("TerminalSegIQlogMedianBL", "TerminalSegIQR", summary_tableMBL)
+```
+
+```{r}
+summary_tableMBL
+```
+
+```{r}
+# Best fit model summary
+cf <- round(coef(m14), 3) 
+eqMBL <- paste0("logMedian_BranchLength = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Height",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " TerminalSegIQR",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[4]), " Num_Nodes")
+
+commentMBL = "Height, TerminalSegIQR, Num_Nodes"
+rowMBL = cbind(eqMBL, commentMBL)
+colnames(rowMBL) = c("Best Fit Model", "Significant Vars (p < 0.05)")
+rowMBL
+```
+
 
 ### Bajada Ocos
 
@@ -1420,12 +1498,73 @@ anova(m7, m12, test="Chisq") # Adding A*C does not improve fit
 anova(m6, m7, test="Chisq") # Adding A marginally improves fit
 anova(m5, m7, test="Chisq") # Adding B improves fit
 anova(m4, m7, test="Chisq") # Adding C improves fit
+anova(m3, m6, test="Chisq") # Adding B improves fit
+anova(m2, m6, test="Chisq") # Adding C improves fit
+```
+
+**Calculate likelihood and weights**
+
+```{r}
+# Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
+
+delta1 = 0 # abs(AIC(m13) - AIC(m13))
+delta2 = abs(AIC(m6) - AIC(m2))
+delta3 = abs(AIC(m6) - AIC(m3))
+delta4 = abs(AIC(m6) - AIC(m0))
+
+me1 <- exp( -0.5 * delta1)
+me2 <- exp( -0.5 * delta2)
+me3 <- exp( -0.5 * delta3)
+me4 <- exp( -0.5 * delta4)
+
+# Calculate the Akaike weight for a model which is this value divided by the sum of these values across all models.
+
+sum <- sum(c(me1, me2, me3, me4))
+
+weight1 = me1 / (sum) 
+weight2 = me2 / (sum)
+weight3 = me3 / (sum)
+weight4 = me4 / (sum)
 ```
 
 ```{r}
-summary(m6)
+summary_tableMBL.B = round(cbind(c(AIC(m6), AIC(m2), AIC(m3), AIC(m0)),
+                            c(delta1, delta2, delta3, delta4), 
+                            c(me1, me2, me3, me4), 
+                            c(weight1, weight2, weight3, weight4)),3)
+
+eq1 = paste(m6$call)[2]
+eq2 = paste(m2$call)[2]
+eq3 = paste(m3$call)[2]
+eq4 = paste(m0$call)[2]
+
+equations = c(eq1, eq2, eq3, eq4)
+equations = rename_regformula(equations, "logMedianBL", "Height", "TerminalSegIQR", "Num_Nodes")
+
+summary_tableMBL.B = cbind(equations, summary_tableMBL.B)
+colnames(summary_tableMBL.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
+```{r}
+summary_tableMBL.B = gsub("TerminalSegIQlogMedianBL", "TerminalSegIQR", summary_tableMBL.B)
+```
+
+```{r}
+summary_tableMBL.B
+```
+
+```{r}
+# Best fit model summary
+cf <- round(coef(m6), 3) 
+eqMBL.B <- paste0("logMedian_BranchLength = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " TerminalSegIQR",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Num_Nodes")
+
+commentMBL.B = "TerminalSegIQR, Num_Nodes"
+rowMBL.B = cbind(eqMBL.B, commentMBL.B)
+colnames(rowMBL.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
+rowMBL.B
+```
 
 # Mixed Effect Modeling of Ocotillo Terminal Segments
 
@@ -1511,7 +1650,7 @@ Dropped branch_num as a random factor to better help the model fit the data.
 Only significant covariates are listed below (most are marginal in this case):
 
 ```{r}
-segs = segs[segs$Tree != 1,]
+segs = segs[segs$Tree != 1,] # do you remove outlier - hello!
 ```
 
 ```{r echo=FALSE}
@@ -1549,15 +1688,8 @@ model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
 ```
 ```{r}
 anova(m6, m10, test="Chisq") # Adding B*C does improve fit
-summary(m10)
+anova(m7, m11, test="Chisq") # Adding A*B does improve fit
 ```
-
-
-```{r}
-plot(segs$NumNodes, segs$Length)
-plot(segs$BL_IQR, segs$Length)
-```
-
 
 **Plot diagnostics**
 

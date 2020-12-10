@@ -546,3 +546,17 @@ plot(logNodes ~ Median_BL_c, data=temp)
 plot(logNodes ~ TSegIQR_c, data=temp)
 plot(logNodes ~ BL_IQR_c, data=temp)
 ```
+
+## Median Branch Length
+
+```{r}
+plot(logMedian_BL ~ Terminal_SegIQR, data=temp, xlab="Terminal Segment Length IQR (cm)", ylab="Log(Median Branch Length) (cm)")
+```
+
+## Terminal Segment Length
+
+```{r}
+plot(segs$NumNodes, segs$Length)
+plot(segs$BL_IQR, segs$Length)
+```
+
