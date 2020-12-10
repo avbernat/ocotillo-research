@@ -1,0 +1,199 @@
+---
+title: "Kruskal-Wallis "
+author: "Anastasia Bernat"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reading and Cleaning the Data
+
+```{r}
+source("src/cleaning_data.R")
+source("src/regression_output.R")
+output_col = FALSE
+
+all_data = clean_data("data/General_Oco_Data2.csv", "data/Terminal_5Segs.csv")
+
+ocos = all_data[[2]]
+ocos_baj = ocos[1:20,]
+segs = all_data[[1]]
+seg_baj = segs[1:1000,] 
+segs <- segs[!is.na(segs$Length_c),]
+```
+
+## Kruskal-Wallis 
+
+**Histogram**
+
+```{r fig.width=8, fig.height=3.5}
+par(mfrow=c(1,2))
+hist(segs$Length, main="", xlab= "Terminal Segment Length (cm)", cex.lab=1.6, cex.axis=1.4, xlim=c(0,80), ylim=c(0,500), col="white")
+title("(a)", adj = 0.05, line = 0, cex.main=1.5)
+```
+
+
+```{r}
+kruskal.test(Length ~ Inter_Plant_Group, data = segs)
+table <- pairwise.wilcox.test(segs$Length, segs$COMP_id,
+                 p.adjust.method = "BH")
+
+model1 <- kruskal.test(Length ~ Inter_Plant_Group, data = segs)
+model2 <- kruskal.test(Length ~ Inter_ID, data = segs)
+
+#table$p.value
+
+summary(aov(segs$Length ~ segs$Inter_ID))
+Interspecific_Plant <- segs$Inter_ID
+model = aov(segs$Length ~ Interspecific_Plant)
+tukey <- TukeyHSD(x=model, conf.level=0.95)
+par(mar = c(4, 14, 4, 1) , cex.axis=.7)
+plot(tukey , las=1 , col="brown")
+```
+
+**By Interspecific Species**
+
+```{r fig.height=4, fig.width=5.3}
+data = data.frame(Segment_Length=segs$Length, 
+                  Inter_Species=segs$Inter_ID, 
+                  Inter_Plant_Group=segs$Inter_Plant_Group)
+pwc <- segs %>% 
+  dunn_test(Length ~ Inter_ID, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "group")
+
+res.kruskal <- segs %>% kruskal_test(Length ~ Inter_ID)
+res.kruskal
+
+ggplot(segs, aes(Inter_ID, Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE), 
+    caption = get_pwc_label(pwc)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Major Nearest Shrub Interspecific Species") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
+
+**By Interspecific Plant Group**
+
+```{r fig.width=4, fig.height=4.1}
+pwc <- segs %>% 
+  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
+
+res.kruskal <- segs %>% kruskal_test(Length ~ Inter_Plant_Group)
+res.kruskal
+
+
+p = ggplot(segs, aes(Inter_Plant_Group, Length)) + 
+  geom_violin() +
+    labs(
+      title="(b)",
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Nearest Major Interspecific Group") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+
+p + theme(
+  panel.background = element_rect(fill = "white",
+                                colour = "grey28",
+                                size = 0.5, linetype = "solid"),
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey"), 
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                colour = "white")
+  )
+```
+
+**By Interspecies Group Comparing Bajada v.s. Plain**
+
+```{r fig.width=4, fig.height=3.5}
+
+#### Bajada by Interspecies Group
+
+pwc <- seg_baj %>% 
+  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
+
+res.kruskal <- seg_baj %>% kruskal_test(Length ~ Inter_Plant_Group)
+res.kruskal
+
+ggplot(seg_baj, aes(Inter_Plant_Group,Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Nearest Major Interspecies Group") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+
+#### Plain by Interspecies Group
+
+seg_plain = segs[segs$Site == 1,]
+
+pwc <- seg_plain %>% 
+  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
+
+res.kruskal <- seg_plain %>% kruskal_test(Length ~ Inter_Plant_Group)
+res.kruskal
+
+ggplot(seg_plain, aes(Inter_Plant_Group,Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Nearest Major Interspecies Group") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
+
+**By Site **
+
+```{r}
+segs$Site_b = segs$Site
+segs$Site[segs$Site_b == 0] <- "bajada"
+segs$Site[segs$Site_b == 1] <- "plain"
+```
+
+```{r fig.width=4, fig.height=3.5}
+segs$Site_b = as.factor(segs$Site)
+
+pwc <- segs %>% 
+  dunn_test(Length ~ Site, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Site")
+
+res.kruskal <- segs %>% kruskal_test(Length ~ Site)
+res.kruskal
+
+ggplot(segs, aes(Site, Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Site Type") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
