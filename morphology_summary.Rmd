@@ -458,12 +458,6 @@ anova(m0, m1, test='Chisq') # Adding A does improve fit
 anova(m0, m2, test='Chisq') # Adding B does not improve fit
 ```
 
-```{r}
-tidy_regression(m1, output_col) 
-tidy_regression(m0, output_col) 
-tidy_regression(m2, output_col)
-```
-
 **Plot diagnostics**
 
 All passed. Residuals are independent.
@@ -706,14 +700,6 @@ anova(m10, m13, test='Chisq') # Adding A improves fit
 anova(m6, m13, test='Chisq') # Adding D improves fit
 ```
 
-```{r}
-tidy_regression(m13, output_col) # A + C + D
-tidy_regression(m10, output_col) # C + D | Add A
-tidy_regression(m7, output_col) # A + D | Add C
-tidy_regression(m5, output_col)
-tidy_regression(m6, output_col) # A + C | Add D
-```
-
 **Plot diagnostics**
 
 All passed. Residuals are independent.
@@ -870,15 +856,6 @@ anova(m3, m6, test="Chisq") # Adding B does improve fit
 anova(m2, m6, test="Chisq") # Adding C does improve fit
 ```
 
-```{r}
-tidy_regression(m10, output_col)
-tidy_regression(m13, output_col) 
-tidy_regression(m6, output_col) 
-tidy_regression(m7, output_col) 
-tidy_regression(m2, output_col) 
-tidy_regression(m3, output_col) 
-```
-
 **Arroyo_c, Circ_c, Intra_Dis_c**
 
 ```{r}
@@ -902,15 +879,6 @@ anova(m3, m6, test="Chisq") # Adding B does improve fit
 anova(m2, m6, test="Chisq") # Adding C does improve fit
 ```
 
-```{r}
-tidy_regression(m10, output_col)
-tidy_regression(m13, output_col) 
-tidy_regression(m6, output_col) 
-tidy_regression(m7, output_col) 
-tidy_regression(m2, output_col) 
-tidy_regression(m3, output_col) 
-```
-
 **Inter_plant_b, Circ_c, Intra_Dis_c**
 
 ```{r}
@@ -931,17 +899,11 @@ anova(m10, m13, test="Chisq") # Adding A marginally improves fit
 anova(m6, m10, test="Chisq") # Adding B*C does improve fit
 ```
 
-```{r}
-tidy_regression(m15, output_col) 
-tidy_regression(m17, output_col) 
-tidy_regression(m13, output_col) 
-tidy_regression(m10, output_col)
-tidy_regression(m6, output_col) 
-```
-
 **Comparing best fits**
 
 ```{r}
+ocos = all_data[[2]]
+ocos_baj = ocos[1:20,]
 m0 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b + Arroyo_c, ocos_baj)
 m1 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b + Elevation_c, ocos_baj)
 m2 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b, ocos_baj)
@@ -959,7 +921,7 @@ anova(m2, m0, test="Chisq") # Adding Arroyo_c does not improve fit
 ```
 
 ```{r}
-tidy_regression(m2, output_col) # top model
+tidy_regression(m2, output_col) # best fit model
 ```
 
 **Plot diagnostics**
@@ -1294,9 +1256,6 @@ summary_tableNN.B = gsub("Terminal_SegLengthIQlogNumNodesranchLengthIQlogNumNode
 ```{r}
 summary_tableNN.B 
 ```
-```{r}
-tidy_regression(m5, output_col)
-```
 
 ```{r}
 # Best fit model summary
@@ -1508,8 +1467,8 @@ anova(m2, m6, test="Chisq") # Adding C improves fit
 # Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
 
 delta1 = 0 # abs(AIC(m13) - AIC(m13))
-delta2 = abs(AIC(m6) - AIC(m2))
-delta3 = abs(AIC(m6) - AIC(m3))
+delta2 = abs(AIC(m6) - AIC(m3))
+delta3 = abs(AIC(m6) - AIC(m2))
 delta4 = abs(AIC(m6) - AIC(m0))
 
 me1 <- exp( -0.5 * delta1)
@@ -1528,14 +1487,14 @@ weight4 = me4 / (sum)
 ```
 
 ```{r}
-summary_tableMBL.B = round(cbind(c(AIC(m6), AIC(m2), AIC(m3), AIC(m0)),
+summary_tableMBL.B = round(cbind(c(AIC(m6), AIC(m3), AIC(m2), AIC(m0)),
                             c(delta1, delta2, delta3, delta4), 
                             c(me1, me2, me3, me4), 
                             c(weight1, weight2, weight3, weight4)),3)
 
 eq1 = paste(m6$call)[2]
-eq2 = paste(m2$call)[2]
-eq3 = paste(m3$call)[2]
+eq2 = paste(m3$call)[2]
+eq3 = paste(m2$call)[2]
 eq4 = paste(m0$call)[2]
 
 equations = c(eq1, eq2, eq3, eq4)
@@ -1643,33 +1602,89 @@ rename_regformulaME = function (eqs, response_var, predA, predB, predC, randX, r
 }
 ```
 
+
+**Addressing and Removing the Outlier**
+
+```{r}
+# Cleveland Dotplot & Boxplot
+par(mfrow=c(1,2))
+x = segs$Length
+y = seq(1, length(x),)
+plot(x,y, ylab="Order of the data", xlab="Terminal Segment Length")
+boxplot(segs$Length)
+
+segs = segs[segs$Tree != 1,] # remove Plant 1 outlier 
+
+x = segs$Length
+y = seq(1, length(x),)
+plot(x,y, ylab="Order of the data", xlab="Terminal Segment Length")
+boxplot(segs$Length)
+```
+
+```{r}
+# re-centering variables used below
+segs$BL_IQR_c = segs$BL_IQR - mean(segs$BL_IQR, na.rm=TRUE)
+segs$NumNodes_c = segs$NumNodes - mean(segs$NumNodes, na.rm=TRUE)
+```
+
 **Testing Covariates**
 
 Dropped branch_num as a random factor to better help the model fit the data.
 
-Only significant covariates are listed below (most are marginal in this case):
-
-```{r}
-segs = segs[segs$Tree != 1,] # do you remove outlier - hello!
-```
+Only significant covariates are listed below:
 
 ```{r echo=FALSE}
-m1 = lmer(Length_c ~ Height_c + (1|Tree) + (1|seg_num), data=segs)
-m2 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=segs) 
-m3 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=segs)
-m4 = lmer(Length_c ~ NumNodes_c + (1|Tree) + (1|seg_num), data=segs)
-m5 = lmer(Length_c ~ BL_IQR_c + (1|Tree) + (1|seg_num), data=segs)
+m1 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=segs) 
+m2 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=segs)
+m3 = lmer(Length_c ~ NumNodes_c + (1|Tree) + (1|seg_num), data=segs)
+m4 = lmer(Length_c ~ BL_IQR_c + (1|Tree) + (1|seg_num), data=segs)
 
-# lmer(Length_c ~ X1m_type2 + (1|Tree) + (1|seg_num), data=segs) also significant but it does not answer our question on how the number and types of small potential competitors affect terminal segment length.
-
-tidy_regression(m1, output_col) # not sig if remove Plant 1
-tidy_regression(m2, output_col) # not sig if remove Plant 1 
+tidy_regression(m1, output_col) # marginal
+tidy_regression(m2, output_col) # marginal
 tidy_regression(m3, output_col) 
 tidy_regression(m4, output_col)
-tidy_regression(m5, output_col)
 ```
 
-**R1m_shrub2cactus, NumNodes_c,BL_IQR_c **
+**T1m_NumCacti, NumNodes_c, BL_IQR_c**
+
+```{r}
+data<-data.frame(
+  R=segs$Length_c,
+  A=segs$T1m_NumCacti, 
+  B=segs$NumNodes_c, 
+  C=segs$BL_IQR_c,
+  X=segs$Tree,
+  Y=segs$seg_num)
+
+# Fit the models to the same number of observations by filtering out NA values:
+data <- data[complete.cases(data),]
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
+```
+
+```{r}
+anova(m7, m11, test="Chisq") # Adding A*B does improve fit
+anova(m6, m7, test="Chisq") # Adding A does not improve fit
+anova(m5, m7, test="Chisq") # Adding B does improve fit
+anova(m4, m7, test="Chisq") # Adding C does not improve fit
+```
+
+**Plot diagnostics**
+
+All passed. Residuals are independent.
+
+```{r}
+plot_diagnostic(m11, segs)
+plot_diagnostic(m7, segs)
+plot_diagnostic(m6, segs)
+plot_diagnostic(m5, segs)
+plot_diagnostic(m4, segs)
+```
+
+**Model Comparisons**
+
+**R1m_shrub2cactus, NumNodes_c, BL_IQR_c**
 
 ```{r}
 data<-data.frame(
@@ -1686,9 +1701,13 @@ data <- data[complete.cases(data),]
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
 ```
+
 ```{r}
-anova(m6, m10, test="Chisq") # Adding B*C does improve fit
+anova(m11, m14, test="Chisq") # Adding A*C does not improve fit
 anova(m7, m11, test="Chisq") # Adding A*B does improve fit
+anova(m6, m7, test="Chisq") # Adding A does not improve fit
+anova(m5, m7, test="Chisq") # Adding B does improve fit
+anova(m4, m7, test="Chisq") # Adding C does improve fit
 ```
 
 **Plot diagnostics**
@@ -1696,69 +1715,20 @@ anova(m7, m11, test="Chisq") # Adding A*B does improve fit
 All passed. Residuals are independent.
 
 ```{r}
-temp_segs = segs[complete.cases(segs$R1m_shrub2cactus),]
-
-plot_diagnostic(m1, segs)
-plot_diagnostic(m2, segs)
-plot_diagnostic(m3, temp_segs)
-#plot_diagnostic(m4, temp_segs)
-```
-
-**Model Comparisons**
-
-**Height, T1m_NumCacti, 1m_shrub2cactus**
-
-```{r}
-data<-data.frame(
-  R=segs$Length_c,
-  A=segs$Height_c, 
-  B=segs$T1m_NumCacti, 
-  C=segs$R1m_shrub2cactus,
-  X=segs$Tree,
-  Y=segs$seg_num)
-
-# Fit the models to the same number of observations by filtering out NA values:
-data <- data[complete.cases(data),]
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
-```
-
-```{r}
-anova(m4, m7, test="Chisq") # Adding C does not improve fits
-anova(m1, m4, test="Chisq") # Adding B does not improve fit
-anova(m1, m5, test="Chisq") # Adding C does not improve fit
-anova(m4, m8, test="Chisq") # Adding A*B does not improve fit
-anova(m0, m1, test="Chisq") # Adding A does improve fit
-```
-
-```{r}
-tidy_regression(m4, output_col)
-tidy_regression(m1, output_col)
-tidy_regression(m5, output_col)
-tidy_regression(m0, output_col)
-```
-
-**Plot diagnostics**
-
-All passed. Residuals are independent.
-
-```{r}
+plot_diagnostic(m11, data)
+plot_diagnostic(m7, data)
+plot_diagnostic(m6, data)
 plot_diagnostic(m4, data)
-plot_diagnostic(m1, data)
-plot_diagnostic(m5, data)
-plot_diagnostic(m0, data)
 ```
-
 **Calculate likelihood and weights**
 
 ```{r}
 # Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
 
 delta1 = 0 # abs(AIC(m4) - AIC(m4))
-delta2 = abs(AIC(m4) - AIC(m1))
-delta3 = abs(AIC(m4) - AIC(m5))
-delta4 = abs(AIC(m4) - AIC(m0))
+delta2 = abs(AIC(m11) - AIC(m7))
+delta3 = abs(AIC(m11) - AIC(m6))
+delta4 = abs(AIC(m11) - AIC(m4))
 
 me1 <- exp( -0.5 * delta1)
 me2 <- exp( -0.5 * delta2)
@@ -1777,41 +1747,46 @@ weight4 = me4 / (sum)
 
 
 ```{r}
-summary_tableS = round(cbind(c(AIC(m4), AIC(m1), AIC(m5), AIC(m0)),
+summary_tableS = round(cbind(c(AIC(m11), AIC(m6), AIC(m7), AIC(m4)),
                             c(delta1, delta2, delta3, delta4), 
                             c(me1, me2, me3, me4), 
                             c(weight1, weight2, weight3, weight4)),3)
 
-eq1 = c(paste(formula(m4))[2], paste(formula(m4))[1], paste(formula(m4))[3]) %>%
+eq1 = c(paste(formula(m11))[2], paste(formula(m11))[1], paste(formula(m11))[3]) %>%
  paste(collapse=' ')
-eq2 = c(paste(formula(m1))[2], paste(formula(m1))[1], paste(formula(m1))[3]) %>%
+eq2 = c(paste(formula(m6))[2], paste(formula(m6))[1], paste(formula(m6))[3]) %>%
  paste(collapse=' ')
-eq3 = c(paste(formula(m5))[2], paste(formula(m5))[1], paste(formula(m5))[3]) %>%
+eq3 = c(paste(formula(m7))[2], paste(formula(m7))[1], paste(formula(m7))[3]) %>%
  paste(collapse=' ')
-eq4 = c(paste(formula(m0))[2], paste(formula(m0))[1], paste(formula(m0))[3]) %>%
+eq4 = c(paste(formula(m4))[2], paste(formula(m4))[1], paste(formula(m4))[3]) %>%
  paste(collapse=' ')
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformulaME(equations, "Length_c", "Height_c", "T1m_NumCacti", "1m_shrub2cactus", "Tree", "seg_num")
+equations = rename_regformulaME(equations, "Length_c", "1m_shrub2cactus", "Number_Nodes", "BranchLengthIQR", "tree", "seg_num")
 
 summary_tableS = cbind(equations, summary_tableS)
 colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
+summary_tableS = gsub("BranchLengthIQLength_c", "BranchLengthIQR", summary_tableS)
+```
+
+```{r}
 summary_tableS
 ```
 
-
 ```{r}
 # Best fit model summary
-cf <- round(summary(m4)$coefficient, 2)
-eqS <- paste0("Length_c = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Height_c",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " T1m_NumCacti", 
-             " + (1 | Tree) + (1 | seg_num)")
+cf <- round(summary(m11)$coefficient, 2)
+eqS <- paste0("Length = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " 1m_shrub2cactus",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Number_Nodes", 
+             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " BranchLengthIQR",
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " 1m_shrub2cactus*Number_Nodes",
+             " + (1 | tree) + (1 | seg_num)")
 
-commentS = "Height_c"
+commentS = "Number_Nodes, BranchLengthIQR, 1m_shrub2cactus*Number_Nodes"
 rowS = cbind(eqS, commentS)
 colnames(rowS) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowS
@@ -1821,7 +1796,13 @@ rowS
 ## Bajada Ocos
 
 ```{r}
+# remove NAs
 seg_baj = seg_baj[!is.na(seg_baj$Length),]
+# remove Plant 1 outlier
+seg_baj = seg_baj[seg_baj$Tree != 1,] 
+# re-centering variables used below
+seg_baj$BL_IQR_c = seg_baj$BL_IQR - mean(seg_baj$BL_IQR, na.rm=TRUE)
+seg_baj$NumNodes_c = seg_baj$NumNodes - mean(seg_baj$NumNodes, na.rm=TRUE)
 ```
 
 **Testing Covariates**
@@ -1831,14 +1812,17 @@ Dropped branch_num as a random factor to better help the model fit the data.
 Only significant covariates are listed below (most are marginal in this case):
 
 ```{r echo=FALSE}
-m1 = lmer(Length_c ~ Height_c + (1|Tree) + (1|seg_num), data=seg_baj)
-m2 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=seg_baj) 
-m3 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=seg_baj)
+m1 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=seg_baj) 
+m2 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=seg_baj)
+m3 = lmer(Length_c ~ BL_IQR_c + (1|Tree) + (1|seg_num), data=seg_baj)
+m4 = lmer(Length_c ~ NumNodes_c + (1|Tree) + (1|seg_num), data=seg_baj)
 
 tidy_regression(m1, output_col) 
 tidy_regression(m2, output_col)
 tidy_regression(m3, output_col)
+tidy_regression(m4, output_col)
 ```
+
 **Plot diagnostics**
 
 All passed. Residuals are independent.
@@ -1847,18 +1831,19 @@ All passed. Residuals are independent.
 temp_seg_baj = seg_baj[complete.cases(seg_baj$R1m_shrub2cactus),]
 
 plot_diagnostic(m1, seg_baj)
-plot_diagnostic(m2, seg_baj)
-plot_diagnostic(m3, temp_seg_baj)
+plot_diagnostic(m2, temp_seg_baj)
+plot_diagnostic(m3, seg_baj)
+plot_diagnostic(m4, seg_baj)
 ```
 
-**Height, T1m_NumCacti, 1m_shrub2cactus**
+**T1m_NumCacti, BL_IQR_c, NumNodes_c**
 
 ```{r}
 data<-data.frame(
   R=seg_baj$Length_c,
-  A=seg_baj$Height_c, 
-  B=seg_baj$T1m_NumCacti, 
-  C=seg_baj$R1m_shrub2cactus,
+  A=seg_baj$T1m_NumCacti, 
+  B=seg_baj$BL_IQR_c, 
+  C=seg_baj$NumNodes_c,
   X=seg_baj$Tree,
   Y=seg_baj$seg_num)
 
@@ -1869,15 +1854,11 @@ source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
 ```
 ```{r}
-anova(m1, m4, test="Chisq") # Adding B does improve fit
-anova(m1, m5, test="Chisq") # Adding C does not improve fit
-```
-
-```{r}
-tidy_regression(m4, output_col)
-tidy_regression(m1, output_col)
-tidy_regression(m5, output_col)
-tidy_regression(m0, output_col)
+anova(m5, m7, test="Chisq") # Adding B marginally improves fit
+anova(m6, m7, test="Chisq") # Adding A marginally improves fit
+anova(m4, m7, test="Chisq") # Adding C improves fit
+anova(m2, m6, test="Chisq") # Adding C improves fit
+anova(m3, m6, test="Chisq") # Adding B marginally improves fit
 ```
 
 **Plot diagnostics**
@@ -1885,10 +1866,35 @@ tidy_regression(m0, output_col)
 All passed. Residuals are independent.
 
 ```{r}
-plot_diagnostic(m4, data)
-plot_diagnostic(m1, data)
-plot_diagnostic(m5, data)
-plot_diagnostic(m0, data)
+plot_diagnostic(m7, data)
+plot_diagnostic(m6, data)
+plot_diagnostic(m2, data)
+plot_diagnostic(m3, data)
+```
+
+**R1m_shrub2cactus, BL_IQR_c, NumNodes_c**
+
+```{r}
+data<-data.frame(
+  R=seg_baj$Length_c,
+  A=seg_baj$R1m_shrub2cactus, 
+  B=seg_baj$BL_IQR_c, 
+  C=seg_baj$NumNodes_c,
+  X=seg_baj$Tree,
+  Y=seg_baj$seg_num)
+
+# Fit the models to the same number of observations by filtering out NA values:
+data <- data[complete.cases(data),]
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
+```
+```{r}
+anova(m6, m7, test="Chisq") # Adding A marginally improves fit
+anova(m5, m7, test="Chisq") # Adding B improves fit
+anova(m4, m7, test="Chisq") # Adding A improves fit
+anova(m3, m6, test="Chisq") # Adding B improves fit
+anova(m2, m6, test="Chisq") # Adding C improves fit
 ```
 
 **Calculate likelihood and weights**
@@ -1897,9 +1903,9 @@ plot_diagnostic(m0, data)
 # Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
 
 delta1 = 0 # abs(AIC(m4) - AIC(m4))
-delta2 = abs(AIC(m4) - AIC(m1))
-delta3 = abs(AIC(m4) - AIC(m5))
-delta4 = abs(AIC(m4) - AIC(m0))
+delta2 = abs(AIC(m6) - AIC(m2))
+delta3 = abs(AIC(m6) - AIC(m3))
+delta4 = abs(AIC(m6) - AIC(m0))
 
 me1 <- exp( -0.5 * delta1)
 me2 <- exp( -0.5 * delta2)
@@ -1915,43 +1921,48 @@ weight2 = me2 / (sum)
 weight3 = me3 / (sum)
 weight4 = me4 / (sum)
 ```
-
+  
 ```{r}
-summary_tableS.B = round(cbind(c(AIC(m4), AIC(m5), AIC(m1), AIC(m0)),
+summary_tableS.B = round(cbind(c(AIC(m6), AIC(m2), AIC(m3), AIC(m0)),
                             c(delta1, delta2, delta3, delta4), 
                             c(me1, me2, me3, me4), 
                             c(weight1, weight2, weight3, weight4)),3)
 
-eq1 = c(paste(formula(m4))[2], paste(formula(m4))[1], paste(formula(m4))[3]) %>%
+eq1 = c(paste(formula(m7))[2], paste(formula(m7))[1], paste(formula(m7))[3]) %>%
  paste(collapse=' ')
-eq2 = c(paste(formula(m5))[2], paste(formula(m5))[1], paste(formula(m5))[3]) %>%
+eq1 = c(paste(formula(m6))[2], paste(formula(m6))[1], paste(formula(m6))[3]) %>%
  paste(collapse=' ')
-eq3 = c(paste(formula(m1))[2], paste(formula(m1))[1], paste(formula(m1))[3]) %>%
+eq2 = c(paste(formula(m2))[2], paste(formula(m2))[1], paste(formula(m2))[3]) %>%
+ paste(collapse=' ')
+eq3 = c(paste(formula(m3))[2], paste(formula(m3))[1], paste(formula(m3))[3]) %>%
  paste(collapse=' ')
 eq4 = c(paste(formula(m0))[2], paste(formula(m0))[1], paste(formula(m0))[3]) %>%
  paste(collapse=' ')
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformulaME(equations, "Length_c", "Height_c", "T1m_NumCacti", "1m_shrub2cactus", "Tree", "seg_num")
+equations = rename_regformulaME(equations, "Length", "1m_shrub2cactus", "BranchLengthIQR", "Number_Nodes", "tree", "seg_num")
 
 summary_tableS.B = cbind(equations, summary_tableS.B)
 colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
+summary_tableS.B = gsub("BranchLengthIQLength", "BranchLengthIQR", summary_tableS.B)
+```
+
+```{r}
 summary_tableS.B
 ```
 
-
 ```{r}
 # Best fit model summary
-cf <- round(summary(m4)$coefficient, 2)
-eqS.B <- paste0("Length_c = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Height_c",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " T1m_NumCacti", 
+cf <- round(summary(m7)$coefficient, 2)
+eqS.B <- paste0("Length = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " BranchLengthIQR",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Number_Nodes",
              " + (1 | Tree) + (1 | seg_num)")
 
-commentS.B = "Height_c and T1m_NumCacti"  
+commentS.B = "BranchLengthIQR and Number_Nodes"  
 rowS.B = cbind(eqS.B, commentS.B)
 colnames(rowS.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowS.B
@@ -1961,227 +1972,52 @@ rowS.B
 ## Summary Tables to CSV
 
 ```{r}
-dataset = c("all", "bajada", "all", "bajada", "all", "bajada", "all", "bajada")
+dataset = c("all", "bajada", "all", "bajada", "all", "bajada", "all", "bajada",
+            "all", "bajada", "all", "bajada")
 best_fit_table = rbind(rowH, rowH.B,
                        rowS, rowS.B,
+                       rowNN, rowNN.B,
+                       rowMBL, rowMBL.B,
                        rowC, rowC.B,
-                       rowNB, rowNB.B)
+                       rowNB, rowNB.B
+                       )
 best_fit_table = cbind(dataset, best_fit_table)
 
 best_fit_table
-write.csv(best_fit_table,'best_fits_morph.csv', row.names=FALSE)
+write.csv(best_fit_table,'best_fits_morph-temp2.csv', row.names=FALSE)
 ```
 
 
 ```{r}
+setH = c("all", "all", "all", "all",
+             "bajada", "bajada", "bajada")
 setS = c("all", "all", "all", "all",
              "bajada", "bajada", "bajada", "bajada")
-setH = c("all", "all", "all", "all", "all",
-             "bajada", "bajada", "bajada", "bajada", "bajada")
+setN = c("all", "all", "all", "all",
+             "bajada", "bajada", "bajada", "bajada")
+setMBL = c("all", "all", "all", "all",
+             "bajada", "bajada", "bajada", "bajada")
 setC = c("all", "all", "all",
              "bajada", "bajada")
 setB = c("all", "all", "all", "all",
              "bajada", "bajada", "bajada", "bajada", "bajada")
 
-datasets = c(setH, setS, setC, setB)
+datasets = c(setH, setS, setN, setMBL, setC, setB)
 ```
 
 ```{r}
 full_table = rbind(summary_tableH, summary_tableH.B,
                    summary_tableS, summary_tableS.B,
+                   summary_tableNN, summary_tableNN.B,
+                   summary_tableMBL, summary_tableMBL.B,
                    summary_tableC, summary_tableC.B,
-                   summary_tableB, summary_tableB.B)
+                   summary_tableB, summary_tableB.B
+                  )
 
 full_table = cbind(datasets, full_table)
 colnames(full_table) = c("Ocotillos", "Equation", "AIC","dAIC", "Likelihood","Weight")
 full_table
 
-write.csv(full_table,'morph_regressions.csv', row.names=FALSE)
+write.csv(full_table,'morph_regressions-temp2.csv', row.names=FALSE)
 ```
-
-## Kruskal-Wallis 
-
-**Re-Reading and Cleaning the Data**
-
-```{r}
-source("src/cleaning_data.R")
-all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
-
-seg_baj = all_data[[1]][[1]]
-segs = all_data[[1]][[2]]
-
-segs <- segs[!is.na(segs$Length_c),]
-```
-
-
-**Histogram**
-
-```{r fig.width=8, fig.height=3.5}
-par(mfrow=c(1,2))
-hist(segs$Length, main="", xlab= "Terminal Segment Length (cm)", cex.lab=1.6, cex.axis=1.4, xlim=c(0,80), ylim=c(0,500), col="white")
-title("(a)", adj = 0.05, line = 0, cex.main=1.5)
-```
-
-
-```{r}
-kruskal.test(Length ~ Inter_Plant_Group, data = segs)
-table <- pairwise.wilcox.test(segs$Length, segs$COMP_id,
-                 p.adjust.method = "BH")
-
-model1 <- kruskal.test(Length ~ Inter_Plant_Group, data = segs)
-model2 <- kruskal.test(Length ~ Inter_ID, data = segs)
-
-#table$p.value
-
-summary(aov(segs$Length ~ segs$Inter_ID))
-Interspecific_Plant <- segs$Inter_ID
-model = aov(segs$Length ~ Interspecific_Plant)
-tukey <- TukeyHSD(x=model, conf.level=0.95)
-par(mar = c(4, 14, 4, 1) , cex.axis=.7)
-plot(tukey , las=1 , col="brown")
-```
-
-**By Interspecific Species**
-
-```{r fig.height=4, fig.width=5.3}
-data = data.frame(Segment_Length=segs$Length, 
-                  Inter_Species=segs$Inter_ID, 
-                  Inter_Plant_Group=segs$Inter_Plant_Group)
-pwc <- segs %>% 
-  dunn_test(Length ~ Inter_ID, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "group")
-
-res.kruskal <- segs %>% kruskal_test(Length ~ Inter_ID)
-res.kruskal
-
-ggplot(segs, aes(Inter_ID, Length)) + 
-  geom_violin() +
-    labs(
-    subtitle = get_test_label(res.kruskal, detailed = TRUE), 
-    caption = get_pwc_label(pwc)
-    ) + 
-  theme(legend.position="none") +
-  xlab("Major Nearest Shrub Interspecific Species") +
-  ylab("Terminal Segment Length (cm)") +
-  geom_boxplot(width=0.1) +
-  stat_pvalue_manual(pwc, hide.ns = TRUE)
-```
-
-**By Interspecific Plant Group**
-
-```{r fig.width=4, fig.height=4.1}
-pwc <- segs %>% 
-  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
-
-res.kruskal <- segs %>% kruskal_test(Length ~ Inter_Plant_Group)
-res.kruskal
-
-
-p = ggplot(segs, aes(Inter_Plant_Group, Length)) + 
-  geom_violin() +
-    labs(
-      title="(b)",
-    subtitle = get_test_label(res.kruskal, detailed = TRUE)
-    ) + 
-  theme(legend.position="none") +
-  xlab("Nearest Major Interspecific Group") +
-  ylab("Terminal Segment Length (cm)") +
-  geom_boxplot(width=0.1) +
-  theme(text = element_text(size=20)) +
-  stat_pvalue_manual(pwc, hide.ns = TRUE)
-
-p + theme(
-  panel.background = element_rect(fill = "white",
-                                colour = "grey28",
-                                size = 0.5, linetype = "solid"),
-  panel.grid.major = element_line(size = 0.5, linetype = 'solid',
-                                colour = "grey"), 
-  panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
-                                colour = "white")
-  )
-```
-
-**By Interspecies Group Comparing Bajada v.s. Plain**
-
-```{r fig.width=4, fig.height=3.5}
-
-#### Bajada by Interspecies Group
-
-pwc <- seg_baj %>% 
-  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
-
-res.kruskal <- seg_baj %>% kruskal_test(Length ~ Inter_Plant_Group)
-res.kruskal
-
-ggplot(seg_baj, aes(Inter_Plant_Group,Length)) + 
-  geom_violin() +
-    labs(
-    subtitle = get_test_label(res.kruskal, detailed = TRUE)
-    ) + 
-  theme(legend.position="none") +
-  xlab("Nearest Major Interspecies Group") +
-  ylab("Terminal Segment Length (cm)") +
-  geom_boxplot(width=0.1) +
-  theme(text = element_text(size=20)) +
-  stat_pvalue_manual(pwc, hide.ns = TRUE)
-
-#### Plain by Interspecies Group
-
-seg_plain = segs[segs$Site == 1,]
-
-pwc <- seg_plain %>% 
-  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
-
-res.kruskal <- seg_plain %>% kruskal_test(Length ~ Inter_Plant_Group)
-res.kruskal
-
-ggplot(seg_plain, aes(Inter_Plant_Group,Length)) + 
-  geom_violin() +
-    labs(
-    subtitle = get_test_label(res.kruskal, detailed = TRUE)
-    ) + 
-  theme(legend.position="none") +
-  xlab("Nearest Major Interspecies Group") +
-  ylab("Terminal Segment Length (cm)") +
-  geom_boxplot(width=0.1) +
-  theme(text = element_text(size=20)) +
-  stat_pvalue_manual(pwc, hide.ns = TRUE)
-```
-
-
-**By Site **
-
-```{r}
-segs$Site_b = segs$Site
-segs$Site[segs$Site_b == 0] <- "bajada"
-segs$Site[segs$Site_b == 1] <- "plain"
-```
-
-
-```{r fig.width=4, fig.height=3.5}
-segs$Site_b = as.factor(segs$Site)
-
-pwc <- segs %>% 
-  dunn_test(Length ~ Site, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "Site")
-
-res.kruskal <- segs %>% kruskal_test(Length ~ Site)
-res.kruskal
-
-ggplot(segs, aes(Site, Length)) + 
-  geom_violin() +
-    labs(
-    subtitle = get_test_label(res.kruskal, detailed = TRUE)
-    ) + 
-  theme(legend.position="none") +
-  xlab("Site Type") +
-  ylab("Terminal Segment Length (cm)") +
-  geom_boxplot(width=0.1) +
-  theme(text = element_text(size=20)) +
-  stat_pvalue_manual(pwc, hide.ns = TRUE)
-```
-
 

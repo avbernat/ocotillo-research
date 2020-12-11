@@ -160,6 +160,12 @@ y = seq(1, length(x),)
 
 plot(x,y, ylab="Order of the data", xlab="Terminal Segment Length IQR")
 boxplot(ocos$Terminal_SegIQR)
+
+x = segs$Length
+y = seq(1, length(x),)
+
+plot(x,y, ylab="Order of the data", xlab="Terminal Segment Length")
+boxplot(segs$Length)
 ```
 
 ```{r}
