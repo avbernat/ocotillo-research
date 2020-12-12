@@ -5,6 +5,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+rm(list=ls())
 dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 setwd(dir)
 
@@ -35,51 +36,9 @@ segs <- segs[!is.na(segs$Length_c),]
 par(mfrow=c(1,2))
 hist(segs$Length, main="", xlab= "Terminal Segment Length (cm)", cex.lab=1.6, cex.axis=1.4, xlim=c(0,80), ylim=c(0,500), col="white")
 title("(a)", adj = 0.05, line = 0, cex.main=1.5)
-```
-
-
-```{r}
-kruskal.test(Length ~ Inter_Plant_Group, data = segs)
-table <- pairwise.wilcox.test(segs$Length, segs$COMP_id,
-                 p.adjust.method = "BH")
-
-model1 <- kruskal.test(Length ~ Inter_Plant_Group, data = segs)
-model2 <- kruskal.test(Length ~ Inter_ID, data = segs)
-
-#table$p.value
-
-summary(aov(segs$Length ~ segs$Inter_ID))
-Interspecific_Plant <- segs$Inter_ID
-model = aov(segs$Length ~ Interspecific_Plant)
-tukey <- TukeyHSD(x=model, conf.level=0.95)
-par(mar = c(4, 14, 4, 1) , cex.axis=.7)
-plot(tukey , las=1 , col="brown")
-```
-
-**By Interspecific Species**
-
-```{r fig.height=4, fig.width=5.3}
-data = data.frame(Segment_Length=segs$Length, 
-                  Inter_Species=segs$Inter_ID, 
-                  Inter_Plant_Group=segs$Inter_Plant_Group)
-pwc <- segs %>% 
-  dunn_test(Length ~ Inter_ID, p.adjust.method = "bonferroni")
-pwc <- pwc %>% add_xy_position(x = "group")
-
-res.kruskal <- segs %>% kruskal_test(Length ~ Inter_ID)
-res.kruskal
-
-ggplot(segs, aes(Inter_ID, Length)) + 
-  geom_violin() +
-    labs(
-    subtitle = get_test_label(res.kruskal, detailed = TRUE), 
-    caption = get_pwc_label(pwc)
-    ) + 
-  theme(legend.position="none") +
-  xlab("Major Nearest Shrub Interspecific Species") +
-  ylab("Terminal Segment Length (cm)") +
-  geom_boxplot(width=0.1) +
-  stat_pvalue_manual(pwc, hide.ns = TRUE)
+temp = segs[segs$Tree != 1,]
+hist(temp$Length, main="", xlab= "Terminal Segment Length (cm)", cex.lab=1.6, cex.axis=1.4, xlim=c(0,50), ylim=c(0,500), col="white")
+title("(b)", adj = 0.05, line = 0, cex.main=1.5)
 ```
 
 **By Interspecific Plant Group**
@@ -116,6 +75,128 @@ p + theme(
                                 colour = "white")
   )
 ```
+
+
+```{r fig.width=4, fig.height=4.1}
+# Removing Plant 1
+pwc <- temp %>% 
+  dunn_test(Length ~ Inter_Plant_Group, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "Inter_Plant_Group")
+
+res.kruskal <- temp %>% kruskal_test(Length ~ Inter_Plant_Group)
+res.kruskal
+
+
+p = ggplot(temp, aes(Inter_Plant_Group, Length)) + 
+  geom_violin() +
+    labs(
+      title="(b)",
+    subtitle = get_test_label(res.kruskal, detailed = TRUE)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Nearest Major Interspecific Group") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  theme(text = element_text(size=20)) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+
+p + theme(
+  panel.background = element_rect(fill = "white",
+                                colour = "grey28",
+                                size = 0.5, linetype = "solid"),
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "grey"), 
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                colour = "white")
+  )
+```
+
+## Extra Exploration Below
+
+```{r}
+par(mfrow=c(1,2))
+
+kruskal.test(Length ~ Inter_Plant_Group, data = segs)
+table <- pairwise.wilcox.test(segs$Length, segs$COMP_id,
+                 p.adjust.method = "BH")
+
+model1 <- kruskal.test(Length ~ Inter_Plant_Group, data = segs)
+model2 <- kruskal.test(Length ~ Inter_ID, data = segs)
+#table$p.value
+summary(aov(segs$Length ~ segs$Inter_ID))
+Interspecific_Plant <- segs$Inter_ID
+model = aov(segs$Length ~ Interspecific_Plant)
+
+tukey <- TukeyHSD(x=model, conf.level=0.95)
+par(mar = c(4, 8, 4, 1) , cex.axis=.5)
+plot(tukey , las=1 , col="brown")
+
+# Removing plant 1
+kruskal.test(Length ~ Inter_Plant_Group, data = temp)
+table <- pairwise.wilcox.test(temp$Length, temp$COMP_id,
+                 p.adjust.method = "BH")
+
+model1 <- kruskal.test(Length ~ Inter_Plant_Group, data = temp)
+model2 <- kruskal.test(Length ~ Inter_ID, data = temp)
+#table$p.value
+summary(aov(temp$Length ~ temp$Inter_ID))
+Interspecific_Plant <- temp$Inter_ID
+model = aov(temp$Length ~ Interspecific_Plant)
+tukey <- TukeyHSD(x=model, conf.level=0.95)
+
+par(mar = c(4, 7, 4, 1) , cex.axis=.5)
+plot(tukey , las=1 , col="brown")
+```
+
+**By Interspecific Species**
+
+```{r fig.height=4, fig.width=5.3}
+
+data = data.frame(Segment_Length=segs$Length, 
+                  Inter_Species=segs$Inter_ID, 
+                  Inter_Plant_Group=segs$Inter_Plant_Group)
+pwc <- segs %>% 
+  dunn_test(Length ~ Inter_ID, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "group")
+
+res.kruskal <- segs %>% kruskal_test(Length ~ Inter_ID)
+res.kruskal
+
+ggplot(segs, aes(Inter_ID, Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE), 
+    caption = get_pwc_label(pwc)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Major Nearest Shrub Interspecific Species") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+
+data = data.frame(Segment_Length=temp$Length, 
+                  Inter_Species=temp$Inter_ID, 
+                  Inter_Plant_Group=temp$Inter_Plant_Group)
+pwc <- temp %>% 
+  dunn_test(Length ~ Inter_ID, p.adjust.method = "bonferroni")
+pwc <- pwc %>% add_xy_position(x = "group")
+
+res.kruskal <- temp %>% kruskal_test(Length ~ Inter_ID)
+res.kruskal
+
+ggplot(temp, aes(Inter_ID, Length)) + 
+  geom_violin() +
+    labs(
+    subtitle = get_test_label(res.kruskal, detailed = TRUE), 
+    caption = get_pwc_label(pwc)
+    ) + 
+  theme(legend.position="none") +
+  xlab("Major Nearest Shrub Interspecific Species") +
+  ylab("Terminal Segment Length (cm)") +
+  geom_boxplot(width=0.1) +
+  stat_pvalue_manual(pwc, hide.ns = TRUE)
+```
+
 
 **By Interspecies Group Comparing Bajada v.s. Plain**
 
