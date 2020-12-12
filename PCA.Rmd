@@ -57,7 +57,7 @@ Round <- function(number){
 ```
 
 ```{r}
-PCA_graphs <- function(dataset){
+PCA_graphs <- function(dataset, PCA_title){
     GFpca <- PCA(dataset, scale.unit = TRUE, graph = TRUE, ncp = 10)
     
     eig.val <- get_eigenvalue(GFpca)
@@ -70,8 +70,10 @@ PCA_graphs <- function(dataset){
     
     labX <- paste("PC1 (", Round(eig.val[1, 2]), "%)", sep = "")
     labY <- paste("PC1 (", Round(eig.val[2, 2]), "%)", sep = "")
-    leplot <- fviz_pca_biplot(GFpca, geom.id = c("point"), geom.var = c("arrow", "text"), label = "var", repel = TRUE, col.ind = "gray", col.var = "black")
-    ggpubr::ggpar(leplot,title = "Principal Component Analysis of F. splendens Morphology", xlab = labX, ylab = labY,ggtheme = theme_classic(), font.main = 16, font.x = 14, font.y = 14, font.tickslab = 12)
+    leplot <- fviz_pca_biplot(GFpca, geom.id = c("point"), geom.var = c("arrow", "text"), 
+                              label = "var", repel = TRUE, col.ind = "gray", col.var = "black")
+    ggpubr::ggpar(leplot, title = PCA_title, xlab = labX, ylab = labY, 
+                  ggtheme = theme_classic(), font.main = 20, font.x = 14, font.y = 14, font.tickslab = 12)
 }
 ```
 
@@ -81,7 +83,7 @@ PCA_graphs <- function(dataset){
 # Plant 1 Removed | Without IQR Vars
 
 d = growthForm[-1, c(-5,-6)]
-PCA_graphs(d)
+PCA_graphs(d, "(a) ")
 
 colnames(d) = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
 D = cor(d)
@@ -96,7 +98,7 @@ corrplot.mixed(D,lower.col = "black", number.cex = .7)
 # Plant 1 Removed 
 
 d = growthForm[-1, ]
-PCA_graphs(d)
+PCA_graphs(d, "(b)")
 
 colnames(d) = c("Height", "Circ", "NB", "M TSL", "TSL IQR", "BL IQR", "M BL", "Nodes")
 D = cor(d)
