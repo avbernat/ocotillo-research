@@ -475,9 +475,7 @@ text(32, 1.3, pval, cex=c1)
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ```
 
-## Number of Nodes
-
-Will need to plot without outlier: 
+## Number of Nodes and Median Branch Length
 
 ```{r fig.width=6, fig.height=2.7}
 
@@ -562,16 +560,97 @@ title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ```
 
 ```{r}
-# temp = ocos_baj[-1,]
+temp = ocos_baj[-1,]
 plot(logNodes ~ Median_BL_c, data=temp)
 plot(logNodes ~ TSegIQR_c, data=temp)
 plot(logNodes ~ BL_IQR_c, data=temp)
 ```
 
-## Median Branch Length
+```{r fig.width=6, fig.height=2.7}
 
-```{r}
-plot(logMedian_BL ~ Terminal_SegIQR, data=temp, xlab="Terminal Segment Length IQR (cm)", ylab="Log(Median Branch Length) (cm)")
+par(mfrow=c(1,2))
+###### Plot A
+
+ocos = all_data[[2]]
+ocos$Median_BL_m = ocos$Median_BranchLength/100
+
+d = ocos
+x=d[,"Median_BL_m"]
+y=d[,"logNodes"] 
+
+m <- lm(logNodes ~ Median_BL_m, data=ocos)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("black", "grey"))
+plot(ocos$logNodes ~ ocos$Median_BL_m, 
+     col=colfunc(20)[as.factor(ocos_baj$Elevation)],
+     pch=(16),
+     xlab = "Median Branch Length (m)",
+     ylab= "Log(Number of Nodes)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     xlim=c(1.5,4),
+     bty="n") 
+legend(325/100,5.1,
+       legend = c("+561", "546-560", "531-545", "516-530", "500-515"),
+       #legend = c("500-515", "516-530", "531-545", "546-560", "+561"),
+       col= c(colfunc(20)[1], colfunc(20)[5], colfunc(20)[9], colfunc(20)[13], colfunc(20)[20]),
+       pch = c(16),
+       cex=c4,
+       title="Elevation (m)")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(240/100, 5.3, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
+title("(c)", adj = 0.05, line = 0, cex.main=c3)
+
+###### Plot A
+ocos = ocos[-1,]
+d = ocos
+x=d[,"Terminal_SegIQR"]
+y=d[,"logMedian_BL"] 
+
+m <- lm(logMedian_BL ~ Terminal_SegIQR, data=ocos)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=ocos)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("black", "grey"))
+plot(ocos$logMedian_BL ~ ocos$Terminal_SegIQR, 
+     #col=colfunc(20)[as.factor(ocos_baj$Elevation)],
+     pch=(16),
+     xlab = "Terminal Segment Length IQR (cm)",
+     ylab= "Log(Median Branch Length) (cm)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     xlim=c(2,12),
+     bty="n") 
+legend(315/100,5.1,
+       legend = c("+561", "546-560", "531-545", "516-530", "500-515"),
+       #legend = c("500-515", "516-530", "531-545", "546-560", "+561"),
+       col= c(colfunc(20)[1], colfunc(20)[5], colfunc(20)[9], colfunc(20)[13], colfunc(20)[20]),
+       pch = c(16),
+       cex=c4,
+       title="Elevation (m)")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(5, 5.7, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
+title("(d)", adj = 0.05, line = 0, cex.main=c3)
 ```
 
 ## Terminal Segment Length

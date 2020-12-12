@@ -1953,15 +1953,6 @@ colnames(rowS.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowS.B
 ```
 
-
-```{r}
-summary(m5)
-(exp(0.03644*10)-1)*100 # 
-(exp(0.0025352*20)-1)*100 # hello!
-0.03644*100
-```
-
-
 ## Summary Tables to CSV
 
 ```{r}
@@ -1977,7 +1968,7 @@ best_fit_table = rbind(rowH, rowH.B,
 num_segs = 26 # writing down number of ocotillos 
 num_segs.b = 19  # writing down number of ocotillos 
 sample_sizes = c(n_height, n_height.b,
-                 num_segs, num_segs.b,
+                 n_segs, n_segs.b,
                  n_nodes, n_nodes.b,
                  n_branchlen, n_branchlen.b,
                  n_circ, n_circ.b,
@@ -1986,7 +1977,7 @@ sample_sizes = c(n_height, n_height.b,
 best_fit_summary = cbind(dataset, sample_sizes, best_fit_table)
 colnames(best_fit_summary) = c("Dataset", "Sample Size", "Best Fit Model", "Significant Vars (p < 0.05)")
 
-write.csv(best_fit_summary,'best_fits_morph.csv', row.names=FALSE)
+write.csv(best_fit_summary,'best_fits_morph2.csv', row.names=FALSE)
 ```
 
 
@@ -2020,6 +2011,6 @@ full_table = cbind(datasets, full_table)
 colnames(full_table) = c("Dataset", "Equation", "AIC","dAIC", "Likelihood","Weight")
 full_table
 
-write.csv(full_table,'morph_regressions.csv', row.names=FALSE)
+write.csv(full_table,'morph_regressions2.csv', row.names=FALSE)
 ```
 
