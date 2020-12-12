@@ -29,10 +29,10 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 output_col = FALSE
 
-all_data = clean_data("data/General_Oco_Data.csv", "data/Terminal_5Segs.csv")
+all_data = clean_data("data/General_Oco_Data2.csv", "data/Terminal_5Segs.csv")
 
 ocos = all_data[[2]]
-ocos_baj = ocos[ocos$Plant[1:20],]
+ocos_baj = ocos[1:20,]
 ```
 
 ## Functions
@@ -90,6 +90,11 @@ rename_regformula = function (eqs, response_var, predA, predB, predC, predD) {
 ## Nearest Intraspecific Neighbor 
 
 ### All Ocos
+
+```{r}
+ocos = all_data[[2]]
+n_intra = nrow(ocos)
+```
 
 **Testing Covariates**
 
@@ -255,27 +260,40 @@ colnames(summary_tableN) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
+summary_tableN = gsub("logIntraD", "logIntra_Distance", summary_tableN)
+summary_tableN = gsub("Height_c", "Height", summary_tableN)
+summary_tableN = gsub("Circ_c", "Circ", summary_tableN)
+summary_tableN = gsub("Elevation_c", "Elevation", summary_tableN)
+summary_tableN = gsub("Arroyo_c", "Arroyo_Distance", summary_tableN)
+```
+
+```{r}
 summary_tableN
 ```
 
 ```{r}
 # Best fit model summary
 cf <- round(coef(m3), 2) 
-eqNN <- paste0("logIntraD = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Height_c",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Circ_c",
-             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Elevation_c",
-             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Height_c*Circ_c",
-             ifelse(sign(cf[6])==1, " + ", " - "), abs(cf[6]), " Circ_c*Elevation_c")
+eqNN <- paste0("logIntra_Distance = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Height",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Circ",
+             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Elevation",
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Height*Circ",
+             ifelse(sign(cf[6])==1, " + ", " - "), abs(cf[6]), " Circ*Elevation")
 
-commentNN = "Circ_c and Height_c*Circ_c | Elevation_c and Circ_c*Elevation_c are marginally sig (p < 0.10)"
+commentNN = "Circ, Height*Circ"
 rowNN = cbind(eqNN, commentNN)
 colnames(rowNN) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowNN
 ```
 
-
 ### Bajada Ocos
+
+```{r}
+ocos = all_data[[2]]
+ocos_baj = ocos[1:20,]
+n_intra.b = nrow(ocos_baj)
+```
 
 **Testing Covariates**
 
@@ -436,6 +454,15 @@ colnames(summary_tableN.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
+summary_tableN.B = gsub("logIntraD", "logIntra_Distance", summary_tableN.B)
+summary_tableN.B = gsub("Inter_Dis_c", "Inter_Distance", summary_tableN.B)
+summary_tableN.B = gsub("NBranch_c", "Num_Branch", summary_tableN.B)
+summary_tableN.B = gsub("Elevation_c", "Elevation", summary_tableN.B)
+summary_tableN.B = gsub("Arroyo_c", "Arroyo_Distance", summary_tableN.B)
+```
+
+
+```{r}
 summary_tableN.B
 ```
 
@@ -443,13 +470,13 @@ summary_tableN.B
 ```{r}
 # Best fit model summary
 cf <- round(coef(m1), 2) 
-eqNN.B <- paste0("logIntraD = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " NBranch_c",
-             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Inter_Dis_c",
-             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Elevation_c",
-             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " NBranch_c*Inter_Dis_c")
+eqNN.B <- paste0("logIntra_Distance = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Num_Branch",
+             ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Inter_Distance",
+             ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " Elevation",
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " Num_Branch*Inter_Distance")
 
-commentNN.B = "Elevation_c and NBranch_c*Inter_Dis_c"
+commentNN.B = "Elevation, Num_Branch*Inter_Distance"
 rowNN.B = cbind(eqNN.B, commentNN.B)
 colnames(rowNN.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowNN.B
@@ -459,6 +486,11 @@ rowNN.B
 ## Nearest Major Interspecies Neighbor
 
 ### All Ocos 
+
+```{r}
+ocos = all_data[[2]]
+n_inter = nrow(ocos)
+```
 
 **Testing Covariates**
 
@@ -561,22 +593,34 @@ colnames(summary_tableC) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
+summary_tableC = gsub("logInterD", "logInter_Distance", summary_tableC)
+summary_tableC = gsub("Arroyo_c", "Arroyo", summary_tableC)
+summary_tableC = gsub("Elevation_c", "Elevation", summary_tableC)
+```
+
+```{r}
 summary_tableC
 ```
 
 ```{r}
 # Best fit model summary
 cf <- round(coef(m1), 3) 
-eqC <- paste0("logInterD = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Arroyo_c")
+eqC <- paste0("logInter_Distance = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Arroyo_Distance")
 
-commentC = "Arroyo_c is marginally significant (p=0.054)"
+commentC = "Arroyo_Distance is marginally significant (p=0.054)"
 rowC = cbind(eqC, commentC)
 colnames(rowC) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowC
 ```
 
 ### Bajada Ocotillos
+
+```{r}
+ocos = all_data[[2]]
+ocos_baj = ocos[1:20,]
+n_inter.b = nrow(ocos_baj)
+```
 
 **Testing Covariates**
 
@@ -683,6 +727,12 @@ colnames(summary_tableC.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
+summary_tableC.B = gsub("logInterD", "logInter_Distance", summary_tableC.B)
+summary_tableC.B = gsub("Elevation_c", "Elevation_c", summary_tableC.B)
+summary_tableC.B = gsub("Arroyo_c", "Arroyo_Distance", summary_tableC.B)
+```
+
+```{r}
 summary_tableC.B
 ```
 
@@ -690,10 +740,10 @@ summary_tableC.B
 ```{r}
 # Best fit model summary
 cf <- round(coef(m1), 3) 
-eqC.B <- paste0("logInterD = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Arroyo_c")
+eqC.B <- paste0("logInter_Distance = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " Arroyo_Distance")
 
-commentC.B = "Arroyo_c"
+commentC.B = "Arroyo_Distance"
 rowC.B = cbind(eqC.B, commentC.B)
 colnames(rowC.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowC.B
@@ -706,10 +756,13 @@ rowC.B
 dataset = c("all", "bajada", "all", "bajada")
 best_fit_table = rbind(rowNN, rowNN.B,
                        rowC, rowC.B)
-best_fit_table = cbind(dataset, best_fit_table)
+sample_sizes = c(n_intra, n_intra.b,
+                 n_inter, n_inter.b)
+best_fit_summary = cbind(dataset, sample_sizes, best_fit_table)
+colnames(best_fit_summary) = c("Dataset", "Sample Size", "Best Fit Model", "Significant Vars (p < 0.05)")
 
-best_fit_table
-write.csv(best_fit_table,'best_fits_neighbor.csv', row.names=FALSE)
+best_fit_summary
+write.csv(best_fit_summary,'best_fits_neighbor.csv', row.names=FALSE)
 ```
 
 ```{r}
