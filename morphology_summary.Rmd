@@ -115,6 +115,7 @@ When model comparisons are conducted with the full ocos dataset, the best fit mo
 
 ```{r}
 ocos = ocos[-1,]
+n_height = nrow(ocos)
 
 # center variables
 ocos$TSegIQR_c = ocos$Terminal_SegIQR - mean(ocos$Terminal_SegIQR, na.rm=TRUE)
@@ -291,7 +292,8 @@ t.test(ocos$logHeight~ocos$Site)
 
 ```{r}
 # removing Ocotillo 1
-ocos_baj = ocos[2:20,] 
+ocos_baj = ocos_baj[-1,] 
+n_height.b = nrow(ocos_baj)
 
 # re-center variables
 ocos_baj$TSegIQR_c = ocos_baj$Terminal_SegIQR - mean(ocos_baj$Terminal_SegIQR, na.rm=TRUE)
@@ -409,6 +411,7 @@ rowH.B
 
 ```{r}
 ocos = all_data[[2]] # re-reading the full dataset | no outliers here
+n_circ = nrow(ocos)
 ```
 
 ### All Ocos 
@@ -526,6 +529,11 @@ rowC
 
 ### Bajada Ocotillos
 
+```{r}
+ocos_baj = ocos[1:20,]
+n_circ.b = nrow(ocos_baj)
+```
+
 **Testing Covariates**
 
 Only significant covariates are listed below:
@@ -636,6 +644,11 @@ rowC.B
 ## Number of Branches
 
 ### All Ocos
+
+```{r}
+ocos = all_data[[2]]
+n_branch = nrow(ocos)
+```
 
 **Testing Covariates** 
 
@@ -777,6 +790,11 @@ rowNB
 
 ### Bajada Ocos
 
+```{r}
+ocos_baj = ocos[1:20,]
+n_branch.b = nrow(ocos_baj)
+```
+
 **Testing Covariates** 
 
 Only significant covariates are listed below:
@@ -902,8 +920,6 @@ anova(m6, m10, test="Chisq") # Adding B*C does improve fit
 **Comparing best fits**
 
 ```{r}
-ocos = all_data[[2]]
-ocos_baj = ocos[1:20,]
 m0 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b + Arroyo_c, ocos_baj)
 m1 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b + Elevation_c, ocos_baj)
 m2 = lm(logNB ~ Circ_c * Intra_Dis_c + Inter_plant_b, ocos_baj)
@@ -1023,6 +1039,11 @@ t.test(ocos$logNB~ocos$Inter_Plant_Group)
 ## Number of Nodes
 
 ### All Ocos
+
+```{r}
+ocos = all_data[[2]]
+n_nodes = nrow(ocos)
+```
 
 **Testing Covariates** 
 
@@ -1161,6 +1182,11 @@ rowNN
 ### Bajada
 
 ```{r}
+ocos_baj = ocos[2:20,]
+n_nodes.b = nrow(ocos_baj)
+```
+
+```{r}
 m1 = lm(NumNodes_c ~ BL_IQR_c, data=ocos_baj) 
 m2 = lm(logNodes ~ BL_IQR_c, data=ocos_baj) 
 m3 = lm(logNodes ~ TSegIQR_c, data=ocos_baj) # marginal
@@ -1171,9 +1197,6 @@ tidy_regression(m3, output_col)
 ```
 
 ```{r}
-# outlier: Ocotillo 1
-ocos_baj = ocos_baj[-1,]
-
 # center variables
 ocos_baj$TSegIQR_c = ocos_baj$Terminal_SegIQR - mean(ocos_baj$Terminal_SegIQR, na.rm=TRUE)
 ocos_baj$BL_IQR_c = ocos_baj$BranchLength_IQR - mean(ocos_baj$BranchLength_IQR, na.rm=TRUE)
@@ -1274,6 +1297,12 @@ rowNN.B
 
 ### All Ocos
 
+```{r}
+ocos = all_data[[2]]
+ocos = ocos[-1,]
+n_branchlen = nrow(ocos)
+```
+
 **Testing Covariates** 
 
 Only significant covariates are listed below:
@@ -1281,8 +1310,8 @@ Only significant covariates are listed below:
 ```{r}
 m1 = lm(Median_BL_c ~ NumNodes_c, data=ocos) 
 m2 = lm(logMedian_BL ~ NumNodes_c, data=ocos)
-m3 = lm(Median_BL_c ~ TSegIQR_c, data=ocos[-1,])
-m4 = lm(logMedian_BL ~ TSegIQR_c, data=ocos[-1,])
+m3 = lm(Median_BL_c ~ TSegIQR_c, data=ocos)
+m4 = lm(logMedian_BL ~ TSegIQR_c, data=ocos)
 m5 = lm(Median_BL_c ~ Site, data=ocos) 
 m6 = lm(logMedian_BL ~ Site, data=ocos) 
 m7 = lm(Median_BL_c ~ Height_c, data=ocos) 
@@ -1299,8 +1328,6 @@ tidy_regression(m8, output_col)
 ```
 
 ```{r}
-ocos = ocos[-1,]
-
 # center variables
 ocos$TSegIQR_c = ocos$Terminal_SegIQR - mean(ocos$Terminal_SegIQR, na.rm=TRUE)
 ocos$BL_IQR_c = ocos$BranchLength_IQR - mean(ocos$BranchLength_IQR, na.rm=TRUE)
@@ -1347,8 +1374,8 @@ plot_diagnostic(m8, ocos)
 
 delta1 = 0 # abs(AIC(m13) - AIC(m13))
 delta2 = abs(AIC(m14) - AIC(m10))
-delta3 = abs(AIC(m14) - AIC(m9))
-delta4 = abs(AIC(m14) - AIC(m8))
+delta3 = abs(AIC(m14) - AIC(m8))
+delta4 = abs(AIC(m14) - AIC(m9))
 
 me1 <- exp( -0.5 * delta1)
 me2 <- exp( -0.5 * delta2)
@@ -1366,15 +1393,15 @@ weight4 = me4 / (sum)
 ```
 
 ```{r}
-summary_tableMBL = round(cbind(c(AIC(m14), AIC(m10), AIC(m9), AIC(m8)),
+summary_tableMBL = round(cbind(c(AIC(m14), AIC(m10), AIC(m8), AIC(m9)),
                             c(delta1, delta2, delta3, delta4), 
                             c(me1, me2, me3, me4), 
                             c(weight1, weight2, weight3, weight4)),3)
 
 eq1 = paste(m14$call)[2]
 eq2 = paste(m10$call)[2]
-eq3 = paste(m9$call)[2]
-eq4 = paste(m8$call)[2]
+eq3 = paste(m8$call)[2]
+eq4 = paste(m9$call)[2]
 
 equations = c(eq1, eq2, eq3, eq4)
 equations = rename_regformula(equations, "logMedianBL", "Site", "Height", "TerminalSegIQR", "Num_Nodes")
@@ -1408,6 +1435,12 @@ rowMBL
 
 ### Bajada Ocos
 
+```{r}
+ocos = all_data[[2]]
+ocos_baj = ocos[2:20,]
+n_branchlen.b = nrow(ocos_baj)
+```
+
 **Testing Covariates** 
 
 Only significant covariates are listed below:
@@ -1415,8 +1448,8 @@ Only significant covariates are listed below:
 ```{r}
 m1 = lm(Median_BL_c ~ NumNodes_c, data=ocos_baj) 
 m2 = lm(logMedian_BL ~ NumNodes_c, data=ocos_baj)
-m3 = lm(Median_BL_c ~ TSegIQR_c, data=ocos_baj[-1,])
-m4 = lm(logMedian_BL ~ TSegIQR_c, data=ocos_baj[-1,])
+m3 = lm(Median_BL_c ~ TSegIQR_c, data=ocos_baj)
+m4 = lm(logMedian_BL ~ TSegIQR_c, data=ocos_baj)
 m5 = lm(Median_BL_c ~ Height_c, data=ocos_baj) 
 m6 = lm(logMedian_BL ~ Height_c, data=ocos_baj) 
 
@@ -1429,9 +1462,6 @@ tidy_regression(m6, output_col)
 ```
 
 ```{r}
-# outlier: Ocotillo 1
-ocos_baj = ocos_baj[-1,]
-
 # center variables
 ocos_baj$TSegIQR_c = ocos_baj$Terminal_SegIQR - mean(ocos_baj$Terminal_SegIQR, na.rm=TRUE)
 ocos_baj$BL_IQR_c = ocos_baj$BranchLength_IQR - mean(ocos_baj$BranchLength_IQR, na.rm=TRUE)
@@ -1622,6 +1652,11 @@ boxplot(segs$Length)
 ```
 
 ```{r}
+segs <- segs[complete.cases(segs$Length),]
+n_segs = nrow(segs)
+```
+
+```{r}
 # re-centering variables used below
 segs$BL_IQR_c = segs$BL_IQR - mean(segs$BL_IQR, na.rm=TRUE)
 segs$NumNodes_c = segs$NumNodes - mean(segs$NumNodes, na.rm=TRUE)
@@ -1658,6 +1693,7 @@ data<-data.frame(
 
 # Fit the models to the same number of observations by filtering out NA values:
 data <- data[complete.cases(data),]
+n_segs = nrow(data)
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
@@ -1687,6 +1723,10 @@ plot_diagnostic(m4, segs)
 **R1m_shrub2cactus, NumNodes_c, BL_IQR_c**
 
 ```{r}
+data
+```
+
+```{r}
 data<-data.frame(
   R=segs$Length_c,
   A=segs$R1m_shrub2cactus, 
@@ -1697,6 +1737,7 @@ data<-data.frame(
 
 # Fit the models to the same number of observations by filtering out NA values:
 data <- data[complete.cases(data),]
+n_segs = nrow(data)
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
@@ -1726,8 +1767,8 @@ plot_diagnostic(m4, data)
 # Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
 
 delta1 = 0 # abs(AIC(m4) - AIC(m4))
-delta2 = abs(AIC(m11) - AIC(m7))
-delta3 = abs(AIC(m11) - AIC(m6))
+delta2 = abs(AIC(m11) - AIC(m6))
+delta3 = abs(AIC(m11) - AIC(m7))
 delta4 = abs(AIC(m11) - AIC(m4))
 
 me1 <- exp( -0.5 * delta1)
@@ -1800,6 +1841,9 @@ rowS
 seg_baj = seg_baj[!is.na(seg_baj$Length),]
 # remove Plant 1 outlier
 seg_baj = seg_baj[seg_baj$Tree != 1,] 
+
+n_segs.b = nrow(seg_baj)
+
 # re-centering variables used below
 seg_baj$BL_IQR_c = seg_baj$BL_IQR - mean(seg_baj$BL_IQR, na.rm=TRUE)
 seg_baj$NumNodes_c = seg_baj$NumNodes - mean(seg_baj$NumNodes, na.rm=TRUE)
@@ -1849,6 +1893,7 @@ data<-data.frame(
 
 # Fit the models to the same number of observations by filtering out NA values:
 data <- data[complete.cases(data),]
+n_segs.b = nrow(data)
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
@@ -1885,6 +1930,7 @@ data<-data.frame(
 
 # Fit the models to the same number of observations by filtering out NA values:
 data <- data[complete.cases(data),]
+n_segs.b = nrow(data)
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
@@ -1981,10 +2027,19 @@ best_fit_table = rbind(rowH, rowH.B,
                        rowC, rowC.B,
                        rowNB, rowNB.B
                        )
-best_fit_table = cbind(dataset, best_fit_table)
+num_segs = 26 # writing down number of ocotillos 
+num_segs.b = 19  # writing down number of ocotillos 
+sample_sizes = c(n_height, n_height.b,
+                 num_segs, num_segs.b,
+                 n_nodes, n_nodes.b,
+                 n_branchlen, n_branchlen.b,
+                 n_circ, n_circ.b,
+                 n_branch, n_branch.b)
 
-best_fit_table
-write.csv(best_fit_table,'best_fits_morph-temp2.csv', row.names=FALSE)
+best_fit_summary = cbind(dataset, sample_sizes, best_fit_table)
+colnames(best_fit_summary) = c("Dataset", "Sample Size", "Best Fit Model", "Significant Vars (p < 0.05)")
+
+write.csv(best_fit_summary,'best_fits_morph.csv', row.names=FALSE)
 ```
 
 
@@ -2015,9 +2070,9 @@ full_table = rbind(summary_tableH, summary_tableH.B,
                   )
 
 full_table = cbind(datasets, full_table)
-colnames(full_table) = c("Ocotillos", "Equation", "AIC","dAIC", "Likelihood","Weight")
+colnames(full_table) = c("Dataset", "Equation", "AIC","dAIC", "Likelihood","Weight")
 full_table
 
-write.csv(full_table,'morph_regressions-temp2.csv', row.names=FALSE)
+write.csv(full_table,'morph_regressions.csv', row.names=FALSE)
 ```
 

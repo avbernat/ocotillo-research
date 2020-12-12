@@ -280,6 +280,7 @@ means <- tapply(ocos$logHeight,ocos$Site,mean)
 points(means,pch=18, cex=2, col="white")
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ```
+
 ## Circumference and Number of Branches
 
 ```{r fig.width=2.1, fig.height=5.18}
