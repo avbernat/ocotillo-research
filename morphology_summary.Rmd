@@ -22,6 +22,8 @@ library(factoextra)
 library(readr)
 library(corrplot)
 
+library(outliers)
+
 dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 setwd(dir)
 
@@ -112,6 +114,11 @@ All measurements followed log-normal distributions except for circumference, med
 ### Outlier Case
 
 When model comparisons are conducted with the full ocos dataset, the best fit model includes site and terminal segment length IQR as predictors to logHeight. However, terminal segment length IQR has an outlier - Ocotillo 1 (see graphs.Rmd). In turn, the outlier was removed and logHeight is predicted with a smaller dataset containing all ocotillos except Ocotillo 1.
+
+```{r}
+ocos = all_data[[2]]
+dixon.test(ocos$Terminal_SegIQR)
+```
 
 ```{r}
 ocos = ocos[-1,]
@@ -406,6 +413,7 @@ rowH.B = cbind(eqH.B, commentH.B)
 colnames(rowH.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowH.B
 ```
+
 
 ## Circumference
 
@@ -1273,7 +1281,7 @@ colnames(summary_tableNN.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 
 ```{r}
 summary_tableNN.B = gsub("Median_Terminal_SegLengthIQlogNumNodesranchLength", "Median_BranchLength", summary_tableNN.B)
-summary_tableNN.B = gsub("Terminal_SegLengthIQlogNumNodesranchLengthIQlogNumNodes", "Terminal_SegLengthIQR", summary_tableNN.B)
+summary_tableNN.B = gsub("Terminal_SegLengthIQlogNumNodesranchLengthIQlogNumNodes", "BranchLengthIQR", summary_tableNN.B)
 ```
 
 ```{r}
@@ -1670,7 +1678,8 @@ Only significant covariates are listed below:
 
 ```{r echo=FALSE}
 m1 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=segs) 
-m2 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=segs)
+m2 = lmer(Length_c ~ cbind(T1m_NumShrub, T1m_NumCacti) + (1|Tree) + (1|seg_num), data=segs)
+#m2 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=segs) # not meaningful
 m3 = lmer(Length_c ~ NumNodes_c + (1|Tree) + (1|seg_num), data=segs)
 m4 = lmer(Length_c ~ BL_IQR_c + (1|Tree) + (1|seg_num), data=segs)
 
@@ -1718,49 +1727,6 @@ plot_diagnostic(m5, segs)
 plot_diagnostic(m4, segs)
 ```
 
-**Model Comparisons**
-
-**R1m_shrub2cactus, NumNodes_c, BL_IQR_c**
-
-```{r}
-data
-```
-
-```{r}
-data<-data.frame(
-  R=segs$Length_c,
-  A=segs$R1m_shrub2cactus, 
-  B=segs$NumNodes_c, 
-  C=segs$BL_IQR_c,
-  X=segs$Tree,
-  Y=segs$seg_num)
-
-# Fit the models to the same number of observations by filtering out NA values:
-data <- data[complete.cases(data),]
-n_segs = nrow(data)
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
-```
-
-```{r}
-anova(m11, m14, test="Chisq") # Adding A*C does not improve fit
-anova(m7, m11, test="Chisq") # Adding A*B does improve fit
-anova(m6, m7, test="Chisq") # Adding A does not improve fit
-anova(m5, m7, test="Chisq") # Adding B does improve fit
-anova(m4, m7, test="Chisq") # Adding C does improve fit
-```
-
-**Plot diagnostics**
-
-All passed. Residuals are independent.
-
-```{r}
-plot_diagnostic(m11, data)
-plot_diagnostic(m7, data)
-plot_diagnostic(m6, data)
-plot_diagnostic(m4, data)
-```
 **Calculate likelihood and weights**
 
 ```{r}
@@ -1803,14 +1769,15 @@ eq4 = c(paste(formula(m4))[2], paste(formula(m4))[1], paste(formula(m4))[3]) %>%
  paste(collapse=' ')
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformulaME(equations, "Length_c", "1m_shrub2cactus", "Number_Nodes", "BranchLengthIQR", "tree", "seg_num")
+equations = rename_regformulaME(equations, "Length", "1m_NumCacti", "Number_Nodes", "BranchLengthIQR", "tree", "seg_num")
 
 summary_tableS = cbind(equations, summary_tableS)
 colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
-summary_tableS = gsub("BranchLengthIQLength_c", "BranchLengthIQR", summary_tableS)
+summary_tableS = gsub("1m_NumBranchLengthIQLength_cacti", "1m_NumCacti", summary_tableS)
+summary_tableS = gsub("BranchLengthIQLength", "BranchLengthIQR", summary_tableS)
 ```
 
 ```{r}
@@ -1821,18 +1788,17 @@ summary_tableS
 # Best fit model summary
 cf <- round(summary(m11)$coefficient, 2)
 eqS <- paste0("Length = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " 1m_shrub2cactus",
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " 1m_NumCacti",
              ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Number_Nodes", 
              ifelse(sign(cf[4])==1, " + ", " - "), abs(cf[4]), " BranchLengthIQR",
-             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " 1m_shrub2cactus*Number_Nodes",
+             ifelse(sign(cf[5])==1, " + ", " - "), abs(cf[5]), " 1m_NumCacti*Number_Nodes",
              " + (1 | tree) + (1 | seg_num)")
 
-commentS = "Number_Nodes, BranchLengthIQR, 1m_shrub2cactus*Number_Nodes"
+commentS = "Number_Nodes, BranchLengthIQR, 1m_NumCacti*Number_Nodes"
 rowS = cbind(eqS, commentS)
 colnames(rowS) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowS
 ```
-
 
 ## Bajada Ocos
 
@@ -1853,11 +1819,12 @@ seg_baj$NumNodes_c = seg_baj$NumNodes - mean(seg_baj$NumNodes, na.rm=TRUE)
 
 Dropped branch_num as a random factor to better help the model fit the data.
 
-Only significant covariates are listed below (most are marginal in this case):
+Only significant covariates are listed below (some are marginal in this case):
 
 ```{r echo=FALSE}
 m1 = lmer(Length_c ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=seg_baj) 
-m2 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=seg_baj)
+m2 = lmer(Length_c ~ cbind(T1m_NumShrub, T1m_NumCacti) + (1|Tree) + (1|seg_num), data=seg_baj) 
+#m2 = lmer(Length_c ~ R1m_shrub2cactus + (1|Tree) + (1|seg_num), data=seg_baj)
 m3 = lmer(Length_c ~ BL_IQR_c + (1|Tree) + (1|seg_num), data=seg_baj)
 m4 = lmer(Length_c ~ NumNodes_c + (1|Tree) + (1|seg_num), data=seg_baj)
 
@@ -1872,10 +1839,8 @@ tidy_regression(m4, output_col)
 All passed. Residuals are independent.
 
 ```{r}
-temp_seg_baj = seg_baj[complete.cases(seg_baj$R1m_shrub2cactus),]
-
 plot_diagnostic(m1, seg_baj)
-plot_diagnostic(m2, temp_seg_baj)
+plot_diagnostic(m2, seg_baj)
 plot_diagnostic(m3, seg_baj)
 plot_diagnostic(m4, seg_baj)
 ```
@@ -1904,6 +1869,7 @@ anova(m6, m7, test="Chisq") # Adding A marginally improves fit
 anova(m4, m7, test="Chisq") # Adding C improves fit
 anova(m2, m6, test="Chisq") # Adding C improves fit
 anova(m3, m6, test="Chisq") # Adding B marginally improves fit
+anova(m3, m5, test="Chisq") # Adding A improves fit
 ```
 
 **Plot diagnostics**
@@ -1917,41 +1883,15 @@ plot_diagnostic(m2, data)
 plot_diagnostic(m3, data)
 ```
 
-**R1m_shrub2cactus, BL_IQR_c, NumNodes_c**
-
-```{r}
-data<-data.frame(
-  R=seg_baj$Length_c,
-  A=seg_baj$R1m_shrub2cactus, 
-  B=seg_baj$BL_IQR_c, 
-  C=seg_baj$NumNodes_c,
-  X=seg_baj$Tree,
-  Y=seg_baj$seg_num)
-
-# Fit the models to the same number of observations by filtering out NA values:
-data <- data[complete.cases(data),]
-n_segs.b = nrow(data)
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
-```
-```{r}
-anova(m6, m7, test="Chisq") # Adding A marginally improves fit
-anova(m5, m7, test="Chisq") # Adding B improves fit
-anova(m4, m7, test="Chisq") # Adding A improves fit
-anova(m3, m6, test="Chisq") # Adding B improves fit
-anova(m2, m6, test="Chisq") # Adding C improves fit
-```
-
 **Calculate likelihood and weights**
 
 ```{r}
 # Calculate relative likelihood of each model which is exp( -0.5 * deltaAIC)
 
 delta1 = 0 # abs(AIC(m4) - AIC(m4))
-delta2 = abs(AIC(m6) - AIC(m2))
-delta3 = abs(AIC(m6) - AIC(m3))
-delta4 = abs(AIC(m6) - AIC(m0))
+delta2 = abs(AIC(m5) - AIC(m6))
+delta3 = abs(AIC(m5) - AIC(m3))
+delta4 = abs(AIC(m5) - AIC(m4))
 
 me1 <- exp( -0.5 * delta1)
 me2 <- exp( -0.5 * delta2)
@@ -1969,24 +1909,22 @@ weight4 = me4 / (sum)
 ```
   
 ```{r}
-summary_tableS.B = round(cbind(c(AIC(m6), AIC(m2), AIC(m3), AIC(m0)),
+summary_tableS.B = round(cbind(c(AIC(m5), AIC(m6), AIC(m3), AIC(m4)),
                             c(delta1, delta2, delta3, delta4), 
                             c(me1, me2, me3, me4), 
                             c(weight1, weight2, weight3, weight4)),3)
 
-eq1 = c(paste(formula(m7))[2], paste(formula(m7))[1], paste(formula(m7))[3]) %>%
+eq1 = c(paste(formula(m5))[2], paste(formula(m5))[1], paste(formula(m5))[3]) %>%
  paste(collapse=' ')
-eq1 = c(paste(formula(m6))[2], paste(formula(m6))[1], paste(formula(m6))[3]) %>%
- paste(collapse=' ')
-eq2 = c(paste(formula(m2))[2], paste(formula(m2))[1], paste(formula(m2))[3]) %>%
+eq2 = c(paste(formula(m6))[2], paste(formula(m6))[1], paste(formula(m6))[3]) %>%
  paste(collapse=' ')
 eq3 = c(paste(formula(m3))[2], paste(formula(m3))[1], paste(formula(m3))[3]) %>%
  paste(collapse=' ')
-eq4 = c(paste(formula(m0))[2], paste(formula(m0))[1], paste(formula(m0))[3]) %>%
+eq4 = c(paste(formula(m4))[2], paste(formula(m4))[1], paste(formula(m4))[3]) %>%
  paste(collapse=' ')
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformulaME(equations, "Length", "1m_shrub2cactus", "BranchLengthIQR", "Number_Nodes", "tree", "seg_num")
+equations = rename_regformulaME(equations, "Length", "1m_NumCacti", "BranchLengthIQR", "Number_Nodes", "tree", "seg_num")
 
 summary_tableS.B = cbind(equations, summary_tableS.B)
 colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
@@ -1994,6 +1932,7 @@ colnames(summary_tableS) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 
 ```{r}
 summary_tableS.B = gsub("BranchLengthIQLength", "BranchLengthIQR", summary_tableS.B)
+summary_tableS.B = gsub("1m_NumNumber_Nodesacti", "1m_NumCacti", summary_tableS.B)
 ```
 
 ```{r}
@@ -2002,9 +1941,9 @@ summary_tableS.B
 
 ```{r}
 # Best fit model summary
-cf <- round(summary(m7)$coefficient, 2)
+cf <- round(summary(m5)$coefficient, 2)
 eqS.B <- paste0("Length = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " BranchLengthIQR",
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), " 1m_NumCacti",
              ifelse(sign(cf[3])==1, " + ", " - "), abs(cf[3]), " Number_Nodes",
              " + (1 | Tree) + (1 | seg_num)")
 
@@ -2012,6 +1951,14 @@ commentS.B = "BranchLengthIQR and Number_Nodes"
 rowS.B = cbind(eqS.B, commentS.B)
 colnames(rowS.B) = c("Best Fit Model", "Significant Vars (p < 0.05)")
 rowS.B
+```
+
+
+```{r}
+summary(m5)
+(exp(0.03644*10)-1)*100 # 
+(exp(0.0025352*20)-1)*100 # hello!
+0.03644*100
 ```
 
 

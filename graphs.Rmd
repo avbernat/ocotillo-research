@@ -12,6 +12,7 @@ library(dplyr)
 library(rstatix)
 library(ggplot2)
 library(ggpubr)
+library(outliers)
 
 dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 setwd(dir)
@@ -154,12 +155,19 @@ title("(c)", adj = 0.05, line = 0, cex.main=c3)
 **Cleveland Dotplot & Boxplot**
 
 ```{r}
+ocos = all_data[[2]]
+dixon.test(ocos$Terminal_SegIQR)
+
 par(mfrow=c(1,2))
 x = ocos$Terminal_SegIQR
 y = seq(1, length(x),)
 
-plot(x,y, ylab="Order of the data", xlab="Terminal Segment Length IQR")
-boxplot(ocos$Terminal_SegIQR)
+test = paste("Dixon test; \n", "p = 2.2e-16")
+plot(x,y, ylab="Order of the data", xlab="Terminal Segment Length IQR", pch=16, 
+     main="(a)                                       ")
+text(15, 5, test, cex=.9)
+boxplot(ocos$Terminal_SegIQR, ylab="Terminal Segment Length IQR", pch=16,
+        main="(b)                                       ")
 
 x = segs$Length
 y = seq(1, length(x),)
@@ -221,6 +229,7 @@ Plotting the new best fit model:
 par(mfrow=c(1,2))
 ###### Plot A
 
+ocos = ocos[-1,]
 ocos$Median_BL_m = ocos$Median_BranchLength/100
 
 d = ocos
@@ -260,8 +269,10 @@ text(240/100, 1.25, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
 title("(a)", adj = 0.05, line = 0, cex.main=c3)
 
 summary(m)
+
 ###### Plot B
 
+ocos = all_data[[2]]
 par(bty = 'n')
 boxplot(logHeight~Site,
         data=ocos,
@@ -276,7 +287,7 @@ boxplot(logHeight~Site,
      cex.lab=c3,
      cex.axis=c2
 )
-means <- tapply(ocos$logHeight,ocos$Site,mean)
+means <- tapply(ocos$logHeight,ocos$Site, mean)
 points(means,pch=18, cex=2, col="white")
 title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ```
@@ -376,7 +387,10 @@ boxplot(logNB~Inter_plant_b,
      cex.lab=c3,
      cex.axis=c2
 )
+means <- tapply(ocos$logNB,ocos$Inter_plant_b, mean)
+points(means,pch=18, cex=2, col="white")
 title("(c)", adj = 0.05, line = 0, cex.main=c3)
+
 ```
 
 ## Nearest Neighbor
@@ -565,5 +579,51 @@ plot(logMedian_BL ~ Terminal_SegIQR, data=temp, xlab="Terminal Segment Length IQ
 ```{r}
 plot(segs$NumNodes, segs$Length)
 plot(segs$BL_IQR, segs$Length)
+```
+
+```{r}
+X = array(0, dim=c(7,4,27))
+X[1,0,1] = 19 
+X[6,0,2] = 8.75
+X[1,0,3] = 9.25 
+X[1,0,4] = 5.75 
+X[0,1,5] = 8.75
+X[1,0,6] = 7.00 
+X[4,0,7] = 6.00
+X[2,0,8] = 4.75	
+X[2,0,9] = 6.00	
+X[7,0,10] = 5.75
+
+X[5,1,11] = 5.00
+X[0,0,12] = 6.50
+X[2,4,13] = 2.75
+X[1,0,14] = 8.75 
+X[5,1,15] = 9.00
+X[0,0,16] = 6.00
+X[0,0,17] = 7.00
+X[0,0,18] = 9.50
+X[0,0,19] = 8.00
+X[0,0,20] = 5.75
+
+X[1,0,21] = 7.25 
+X[0,0,22] = 7.00
+X[3,1,23] = 5.75
+X[2,0,24] = 9.50	
+X[3,2,25] = 10.75
+X[2,2,26] = 6.00
+X[3,0,27] = 7.00
+```
+
+```{r fig.width=3, fig.height=2.5}
+matrix = rowMeans(X, dim=2, na.rm=TRUE)
+library(plot.matrix)
+matrix = round(matrix, 2)
+par(mar=c(5.1, 4.1, 4.1, 4.1)) # adapt margins
+plot(matrix, ylab="Number of Shrubs", 
+     xlab="Number of Cacti", 
+     col=grey.colors, 
+     na.col="white", 
+     main="Mean of Terminal Segment Length IQR", 
+     digits=4, text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f')
 ```
 
