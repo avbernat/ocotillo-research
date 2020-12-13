@@ -15,6 +15,12 @@ Circumference: circumference in meters of the individual ocotillo
 
 Number_Branches: number of branches of the individual ocotillo
 
+BranchLength_IQR: interquartile range of the lengths of the 10 branches on each measured ocotillo
+
+Median_BranchLength: median of the lengths of the 10 branches on each measured ocotillo
+
+Num_Nodes: (number of segments measured - 1) per ocotillo
+
 Inter_Dis: distance in meters from the individual ocotillo to the nearest neighboring major interspecific neighbor
 
 Inter_ID: abbreviated species name of nearest major interspecific neighbor

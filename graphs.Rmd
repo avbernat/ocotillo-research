@@ -226,9 +226,10 @@ Plotting the new best fit model:
 
 ```{r fig.width=6, fig.height=2.7}
 
+par(mar = c(4.3, 5, 2, 0)) 
 par(mfrow=c(1,2))
-###### Plot A
 
+###### Plot A
 ocos = ocos[-1,]
 ocos$Median_BL_m = ocos$Median_BranchLength/100
 
@@ -255,8 +256,10 @@ plot(ocos$logHeight ~ ocos$Median_BL_m,
      cex=c2,
      cex.lab=c3,
      cex.axis=c2,
+     xlim=c(1.5,4),
+     ylim=c(.6,1.6),
      bty="n") 
-legend(300/100,0.95,
+legend(3.3,0.92,
        legend = c("Bajada", "Plain"),
        col= c(colfunc(2)[1], colfunc(2)[2]),
        pch = c(17:16),
@@ -396,6 +399,8 @@ title("(c)", adj = 0.05, line = 0, cex.main=c3)
 ## Nearest Neighbor
 
 ```{r fig.width=6, fig.height=2.7}
+
+par(mar = c(4.3, 5, 2, 0)) 
 par(mfrow=c(1,2))
 
 ###### Plot A
@@ -478,6 +483,8 @@ title("(b)", adj = 0.05, line = 0, cex.main=c3)
 ## Number of Nodes and Median Branch Length
 
 ```{r fig.width=6, fig.height=2.7}
+
+par(mar = c(4.3, 5, 2, 0)) 
 
 par(mfrow=c(1,2))
 ###### Plot A
@@ -568,6 +575,8 @@ plot(logNodes ~ BL_IQR_c, data=temp)
 
 ```{r fig.width=6, fig.height=2.7}
 
+par(mar = c(4.3, 5, 2, 0)) 
+
 par(mfrow=c(1,2))
 ###### Plot A
 
@@ -588,9 +597,9 @@ prd$fit <- err$fit
 prd$uci <- err$fit + 1.96 * err$se.fit
 mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
 
-colfunc <- colorRampPalette(c("black", "grey"))
+colfunc <- colorRampPalette(c("grey", "black"))
 plot(ocos$logNodes ~ ocos$Median_BL_m, 
-     col=colfunc(20)[as.factor(ocos_baj$Elevation)],
+     col=colfunc(26)[as.factor(ocos$Elevation)],
      pch=(16),
      xlab = "Median Branch Length (m)",
      ylab= "Log(Number of Nodes)", 
@@ -600,9 +609,9 @@ plot(ocos$logNodes ~ ocos$Median_BL_m,
      xlim=c(1.5,4),
      bty="n") 
 legend(325/100,5.1,
-       legend = c("+561", "546-560", "531-545", "516-530", "500-515"),
-       #legend = c("500-515", "516-530", "531-545", "546-560", "+561"),
-       col= c(colfunc(20)[1], colfunc(20)[5], colfunc(20)[9], colfunc(20)[13], colfunc(20)[20]),
+       #legend = c("+561", "546-560", "531-545", "516-530", "500-515"),
+       legend = c("500-515", "516-530", "531-545", "546-560", "+561"),
+       col= c(colfunc(26)[1], colfunc(26)[5], colfunc(26)[9], colfunc(26)[13], colfunc(26)[20]),
        pch = c(16),
        cex=c4,
        title="Elevation (m)")
@@ -611,8 +620,9 @@ shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
 text(240/100, 5.3, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
 title("(c)", adj = 0.05, line = 0, cex.main=c3)
+summary(m)
 
-###### Plot A
+###### Plot B
 ocos = ocos[-1,]
 d = ocos
 x=d[,"Terminal_SegIQR"]
@@ -639,25 +649,106 @@ plot(ocos$logMedian_BL ~ ocos$Terminal_SegIQR,
      cex.axis=c2,
      xlim=c(2,12),
      bty="n") 
-legend(315/100,5.1,
-       legend = c("+561", "546-560", "531-545", "516-530", "500-515"),
-       #legend = c("500-515", "516-530", "531-545", "546-560", "+561"),
-       col= c(colfunc(20)[1], colfunc(20)[5], colfunc(20)[9], colfunc(20)[13], colfunc(20)[20]),
-       pch = c(16),
-       cex=c4,
-       title="Elevation (m)")
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
 text(5, 5.7, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
 title("(d)", adj = 0.05, line = 0, cex.main=c3)
+summary(m)
 ```
 
 ## Terminal Segment Length
 
+```{r fig.width=6, fig.height=2.7}
+
+segs = segs[segs$Tree != 1,]
+par(mar = c(4.3, 5, 2, 0)) 
+par(mfrow=c(1,2))
+
+###### Plot A
+#plot(temp$T1m_NumCacti, temp$Length)
+
+d = segs
+x=d[,"T1m_NumCacti"]
+y=d[,"Length"] 
+
+m <- lm(Length ~ T1m_NumCacti, data=segs)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=segs)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+colfunc <- colorRampPalette(c("black", "grey"))
+plot(segs$Length ~ segs$T1m_NumCacti, 
+     col=colfunc(20)[as.factor(segs$Elevation)],
+     pch=(1),
+     xlab = "Number of Cacti 1 Meter From Ocotillo ",
+     ylab= "Terminal Segment Length", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     ylim=c(0,50),
+     bty="n") 
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+m <- lmer(Length ~ T1m_NumCacti + (1|Tree) + (1|seg_num), data=segs)
+
+pval <- paste0("t = ", round(summary(m)$coefficients[6],2), "*")
+text(3, 20, pval, cex=c1) # text(240, 1.25, pval, cex=c1)
+title("(a)", adj = 0.05, line = 0, cex.main=c3)
+summary(m)
+```
+
 ```{r}
+temp = segs[segs$Tree != 1,]
+plot(temp$T1m_NumCacti, temp$Length)
+```
+
+```{r}
+segs = all_data[[1]]
 plot(segs$NumNodes, segs$Length)
 plot(segs$BL_IQR, segs$Length)
+```
+
+```{r}
+segs = segs[segs$Tree !=1,]
+tapply(X=segs$Length, INDEX=segs$Tree, FUN=mean, na.rm=T)
+```
+
+```{r}
+X = array(0, dim=c(7,4,27))
+X[1,0,1] = 36.79592 
+X[6,0,2] = 18.78000
+X[1,0,3] = 13.22000 
+X[1,0,4] = 14.90 
+X[0,1,5] = 11.8800
+X[1,0,6] = 9.76000 
+X[4,0,7] = 18.40
+X[2,0,8] = 13.06	
+X[2,0,9] = 11.10	
+X[7,0,10] = 15.46000
+
+X[5,1,11] = 13.44000
+X[0,0,12] = 21.52000
+X[2,4,13] = 10.26000
+X[1,0,14] = 21.82000 
+X[5,1,15] = 15.14000
+X[0,0,16] = 13.64000
+X[0,0,17] = 18.30000
+X[0,0,18] = 18.30000
+X[0,0,19] = 18.30000
+X[0,0,20] = 18.30000
+
+X[1,0,21] = 13.24000 
+X[0,0,22] = 16.92000
+X[3,1,23] = 10.06000
+X[2,0,24] = 11.84000	
+X[3,2,25] = 17.84000
+X[2,2,26] = 13.26000
+X[3,0,27] = 16.92000
 ```
 
 ```{r}
@@ -700,9 +791,10 @@ matrix = round(matrix, 2)
 par(mar=c(5.1, 4.1, 4.1, 4.1)) # adapt margins
 plot(matrix, ylab="Number of Shrubs", 
      xlab="Number of Cacti", 
-     col=grey.colors, 
+     #col=grey.colors, 
      na.col="white", 
-     main="Mean of Terminal Segment Length IQR", 
-     digits=4, text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f')
+     col=rev(grey.colors(7)),
+     main="Mean Terminal Segment Length (cm)", 
+     digits=4, text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
 ```
 

@@ -84,22 +84,28 @@ rename_regformula = function (eqs, response_var, predA, predB, predC, predD) {
   # predB:            predictor variable B as a character
   # predC:            predictor variable C as a character
   # predD:            predictor variable D as a character
+  
   for (i in 1:length(eqs)) {
-  if (grepl(" C", eqs[i], fixed = TRUE)) {
-    eqs[i] =  gsub("C", predC, eqs[i])
-  }
-  if (grepl(" A", eqs[i], fixed = TRUE)) {
-    eqs[i] =  gsub("A", predA, eqs[i])
-  }
-  if (grepl(" B", eqs[i], fixed = TRUE)) {
-    eqs[i] =  gsub("B", predB, eqs[i])
-  }
-  if (grepl(" D", eqs[i], fixed = TRUE)) {
-    eqs[i] =  gsub("D", predD, eqs[i])
-  }
-  if (grepl( "R", eqs[i], fixed = TRUE)) {
-    eqs[i] = gsub("R", response_var, eqs[i])
-  }
+    if (grepl("\\s[C]", eqs[i])) {
+      C = paste0(" ", predC)
+      eqs[i] =  gsub("\\s[C]", C, eqs[i])
+    }
+    if (grepl("\\s[A]", eqs[i])) {
+      A = paste0(" ", predA)
+      eqs[i] =  gsub("\\s[A]", A, eqs[i])
+    }
+    if (grepl("\\s[B]", eqs[i])) {
+      B = paste0(" ", predB)
+      eqs[i] =  gsub("\\s[B]", B, eqs[i])
+    }
+    if (grepl("\\s[D]", eqs[i])) {
+      D = paste0(" ", predD)
+      eqs[i] =  gsub("\\s[D]", D, eqs[i])
+    }
+    if (grepl("[R]\\s", eqs[i])) {
+      R = paste0(response_var, " ")
+      eqs[i] = gsub("[R]\\s", R, eqs[i])
+    }
   }
   return(eqs)
 }
@@ -264,10 +270,8 @@ eq4 = paste(m1$call)[2]
 
 equations = c(eq1, eq2, eq3, eq4)
 equations = rename_regformula(equations, "logHeight", "Site", "Elevation", "Median_BranchLength")
-
 summary_tableH = cbind(equations, summary_tableH)
 colnames(summary_tableH) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
-summary_tableH[2,] = gsub("Median_ElevationranchLength", "Median_BranchLength", summary_tableH[2,])
 ```
 
 ```{r}
@@ -395,7 +399,6 @@ equations = rename_regformula(equations, "logHeight", "Number_Nodes", "Elevation
 
 summary_tableH.B = cbind(equations, summary_tableH.B)
 colnames(summary_tableH.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
-summary_tableH.B[2,] =  gsub("Median_ElevationranchLength", "Median_BranchLength", summary_tableH.B[2,])
 ```
 
 ```{r}
@@ -770,11 +773,10 @@ eq3 = paste(m6$call)[2]
 eq4 = paste(m5$call)[2]
 
 equations = c(eq1, eq2, eq3, eq4)
-equations = rename_regformula(equations, "logNumBranch", "Circ", "Inter_Plant_Group", "Inter_Dis", "Arroyo")
+equations = rename_regformula(equations, "logNumBranch", "Circ", "Inter_Plant_Group", "Inter_Distance", "Arroyo")
 
 summary_tableB = cbind(equations, summary_tableB)
 colnames(summary_tableB) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
-summary_tableB[1,] = gsub("Inter_Arroyois", "Inter_Distance", summary_tableB[1,])
 ```
 
 ```{r}
@@ -1280,8 +1282,7 @@ colnames(summary_tableNN.B) = c("Equation", "AIC","dAIC", "Likelihood","Weight")
 ```
 
 ```{r}
-summary_tableNN.B = gsub("Median_Terminal_SegLengthIQlogNumNodesranchLength", "Median_BranchLength", summary_tableNN.B)
-summary_tableNN.B = gsub("Terminal_SegLengthIQlogNumNodesranchLengthIQlogNumNodes", "BranchLengthIQR", summary_tableNN.B)
+summary_tableNN.B = gsub("Terminal_SegLengthIQRranchLengthIQR", "BranchLengthIQR", summary_tableNN.B)
 ```
 
 ```{r}

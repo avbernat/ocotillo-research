@@ -6,21 +6,21 @@ all,logHeight ~ Site,-15.839,7.375,0.025,0.017
 bajada,logHeight ~ Median_BranchLength,-19,0,1,0.562
 bajada,logHeight ~ Elevation + Median_BranchLength,-17.219,1.781,0.411,0.231
 bajada,logHeight ~ Number_Nodes + Median_BranchLength,-17,2,0.368,0.207
-all,Length ~ 1m_shrub2cactus * Number_Nodes + BranchLengthIQR + (1 | tree) + (1 | seg_num),6007.811,0,1,0.931
-all,Length ~ Number_Nodes + BranchLengthIQR + (1 | tree) + (1 | seg_num),6013.885,6.074,0.048,0.045
-all,Length ~ 1m_shrub2cactus + Number_Nodes + BranchLengthIQR + (1 | tree) + (1 | seg_num),6015.756,7.945,0.019,0.018
-all,Length ~ 1m_shrub2cactus + Number_Nodes + (1 | tree) + (1 | seg_num),6017.658,9.847,0.007,0.007
-bajada,Length ~ BranchLengthIQR + Number_Nodes + (1 | tree) + (1 | seg_num),4052.139,0,1,0.947
-bajada,Length ~ BranchLengthIQR + (1 | tree) + (1 | seg_num),4059.033,6.894,0.032,0.03
-bajada,Length ~ Number_Nodes + (1 | tree) + (1 | seg_num),4059.656,7.518,0.023,0.022
-bajada,Length ~ (1 | tree) + (1 | seg_num),4065.648,13.51,0.001,0.001
+all,Length ~ 1m_NumCacti * Number_Nodes + BranchLengthIQR + (1 | tree) + (1 | seg_num),8256.077,0,1,0.963
+all,Length ~ Number_Nodes + BranchLengthIQR + (1 | tree) + (1 | seg_num),8263.782,7.704,0.021,0.02
+all,Length ~ 1m_NumCacti + Number_Nodes + BranchLengthIQR + (1 | tree) + (1 | seg_num),8265.478,9.4,0.009,0.009
+all,Length ~ 1m_NumCacti + Number_Nodes + (1 | tree) + (1 | seg_num),8265.841,9.764,0.008,0.007
+bajada,Length ~ 1m_NumCacti + Number_Nodes + (1 | tree) + (1 | seg_num),5992.927,0,1,0.466
+bajada,Length ~ BranchLengthIQR + Number_Nodes + (1 | tree) + (1 | seg_num),5993.596,0.669,0.716,0.333
+bajada,Length ~ Number_Nodes + (1 | tree) + (1 | seg_num),5994.786,1.858,0.395,0.184
+bajada,Length ~ 1m_NumCacti + BranchLengthIQR + (1 | tree) + (1 | seg_num),5999.525,6.598,0.037,0.017
 all,logNumNodes ~ Median_BranchLength + Elevation,-5.777,0,1,0.817
 all,logNumNodes ~ Elevation,-2.029,3.748,0.154,0.125
 all,logNumNodes ~ Median_BranchLength,-0.378,5.399,0.067,0.055
 all,logNumNodes ~ 1,6.105,11.882,0.003,0.002
-bajada,logNumNodes ~ Median_BranchLength + Terminal_SegLengthIQR,-10.869,0,1,0.786
+bajada,logNumNodes ~ Median_BranchLength + BranchLengthIQR,-10.869,0,1,0.786
 bajada,logNumNodes ~ Median_BranchLength,-7.689,3.179,0.204,0.16
-bajada,logNumNodes ~ Terminal_SegLengthIQR,-4.296,6.573,0.037,0.029
+bajada,logNumNodes ~ BranchLengthIQR,-4.296,6.573,0.037,0.029
 bajada,logNumNodes ~ 1,-3.932,6.937,0.031,0.024
 all,logMedianBL ~ Height + TerminalSegIQR + Num_Nodes,-46.352,0,1,0.854
 all,logMedianBL ~ TerminalSegIQR + Num_Nodes,-42.737,3.615,0.164,0.14
