@@ -9,7 +9,7 @@ Round <- function(number){
   }
 }
 
-PCA_graphs <- function(dataset, PCA_title, abbrev_names){
+PCA_graphs <- function(dataset, PCA_title, abbrev_names, run_corr=FALSE){
   
   # cos2 and the alpha.var: alpha.var colours variables by cos2 
   # (importance of most important PC to variable), 
@@ -33,14 +33,18 @@ PCA_graphs <- function(dataset, PCA_title, abbrev_names){
                             label = "var", repel = T, 
                             col.ind = "gray", col.var = "black")
   
-  ggpubr::ggpar(leplot, title = PCA_title, xlab = labX, ylab = labY, 
+  pca = ggpubr::ggpar(leplot, title = PCA_title, xlab = labX, ylab = labY, 
                 ggtheme = theme_classic(), font.main = c(20, "bold"), 
                 font.x = 14, font.y = 14, font.tickslab = 12
                 #, xlim = c(-5, 6) #uncomment for PCA1 (without IQR vars)
   )
-  D = cor(d)
-  test <- cor.mtest(d)$p
-  corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
-  corrplot.mixed(D,lower.col = "black", number.cex = .7)
   
+  if (run_corr) {
+    D = cor(d)
+    test <- cor.mtest(d)$p
+    corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+    corrplot.mixed(D,lower.col = "black", number.cex = .7)
+  }
+  
+  return(pca)
 }
