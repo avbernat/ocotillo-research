@@ -9,20 +9,21 @@ Round <- function(number){
   }
 }
 
-PCA_graphs <- function(dataset, PCA_title){
+PCA_graphs <- function(dataset, PCA_title, abbrev_names){
+  
   # cos2 and the alpha.var: alpha.var colours variables by cos2 
   # (importance of most important PC to variable), 
   # see https://personal.utdallas.edu/~herve/abdi-awPCA2010.pdf
   
-  GFpca <- PCA(dataset, scale.unit = TRUE, graph = TRUE, ncp = 10)
+  GFpca <- PCA(dataset, scale.unit = TRUE, graph = FALSE, ncp = 10)
   
   eig.val <- get_eigenvalue(GFpca)
   var.val <- GFpca$var
-  print(eig.val) #will only show in in console
-  print(var.val)
+  # print(eig.val) #will only show in in console
+  # print(var.val)
   
   scree <- fviz_eig(GFpca, addlabels = TRUE, ylim = c(0, 50))
-  print(scree)
+  # print(scree)
   
   labX <- paste("PC1 (", Round(eig.val[1, 2]), "%)", sep = "")
   labY <- paste("PC1 (", Round(eig.val[2, 2]), "%)", sep = "")
@@ -37,4 +38,9 @@ PCA_graphs <- function(dataset, PCA_title){
                 font.x = 14, font.y = 14, font.tickslab = 12
                 #, xlim = c(-5, 6) #uncomment for PCA1 (without IQR vars)
   )
+  D = cor(d)
+  test <- cor.mtest(d)$p
+  corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+  corrplot.mixed(D,lower.col = "black", number.cex = .7)
+  
 }

@@ -156,26 +156,16 @@ growthForm <- read.csv("data/growthForm2.csv", row.names = 1)
 d = ocos[, c("Height", "Circumference", 
              "Number_Branches", "Median_BranchLength", 
              "Num_Nodes", "Median_TerminalSeg")]
-PCA_graphs(d, "(a) ")
-
-colnames(d) = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
-D = cor(d)
-test <- cor.mtest(d)$p
-corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
-corrplot.mixed(D,lower.col = "black", number.cex = .7)
+abbreviations = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
+PCA_graphs(d, "(a) ", abbreviations)
 ```
 
 ```{r fig.height=2.5, fig.width=2.6}
 # Plant 1 Removed | Without IQR Vars
 
 d = growthForm[-1, c(-5,-6)]
-PCA_graphs(d, "(a) ")
-
-colnames(d) = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
-D = cor(d)
-test <- cor.mtest(d)$p
-corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
-corrplot.mixed(D,lower.col = "black", number.cex = .7)
+abbreviations = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
+PCA_graphs(d, "(a) ", abbreviations)
 ```
 
 ### With IQR Vars:
@@ -188,13 +178,8 @@ d = ocos[, c("Height", "Circumference",
              "Num_Nodes", "Median_TerminalSeg", 
              "BranchLength_IQR",
              "Terminal_SegIQR")]
-PCA_graphs(d, "(b)")
-
-colnames(d) = c("Height", "Circ", "NB", "M TSL", "TSL IQR", "BL IQR", "M BL", "Nodes")
-D = cor(d)
-test <- cor.mtest(d)$p
-corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
-corrplot.mixed(D,lower.col = "black", number.cex = .7)
+abbreviations = c("Height", "Circ", "NB", "M TSL", "TSL IQR", "BL IQR", "M BL", "Nodes")
+PCA_graphs(d, "(b)", abbreviations)
 ```
 
 ```{r fig.height=2.5, fig.width=2.6}
