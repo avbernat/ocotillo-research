@@ -58,6 +58,9 @@ Ocotillos, *Fouquieria splendens*, were measured in Summer 2019 in the Sonoran D
 ```{r message=FALSE}
 library(dplyr)
 library(outliers) # dixon.test
+require(FactoMineR) # PCA function
+library(factoextra) # get_eigenvalue function
+library(corrplot) # cor.mtest
 # library(ggplot2)
 # library(olsrr)
 # library(lme4)
@@ -65,11 +68,6 @@ library(outliers) # dixon.test
 # library(tidyverse)
 # library(ggpubr)
 # library(rstatix)
-# 
-# library(FactoMineR)
-# library(factoextra)
-# library(readr)
-# library(corrplot)
 ```
 
 
@@ -80,6 +78,7 @@ source("src/cleaning_data.R")
 source("src/regression_output.R")
 source("src/diagnostics.R")
 source("src/pretty_reg.R")
+source("src/pca.R")
 ```
 
 
@@ -88,8 +87,29 @@ source("src/pretty_reg.R")
 ```{r}
 ocotillo_data = read.csv("data/General_Oco_Data3.csv", 
                             fileEncoding="UTF-8-BOM",  stringsAsFactors=TRUE)
-segment_data = read.csv("data/Terminal_5Segs.csv", 
-                            fileEncoding="UTF-8-BOM",  stringsAsFactors=TRUE)
+branch_data = read.csv("data/branch_lengths_long.csv")
+segment_data = read.csv("data/Terminal_5Segs.csv")
+
+branches = branch_data  %>%
+            group_by(Tree) %>%
+            summarize(Mean_BranchLength = mean(BranchLength, na.rm=TRUE),
+                      Median_BranchLength = median(BranchLength, na.rm=TRUE),
+                      Max_BranchLength = max(BranchLength, na.rm=TRUE),
+                      Min_BranchLength = min(BranchLength, na.rm=TRUE),
+                      BranchLength_IQR = IQR(BranchLength, na.rm=TRUE))
+segments = segment_data %>%
+            group_by(Tree) %>%
+            summarize(Mean_Terminal_SegmentLength = mean(Length, na.rm=TRUE),
+                      Median_Terminal_SegmentLength = median(Length, na.rm=TRUE),
+                      Max_Terminal_SegmentLength = max(Length, na.rm=TRUE),
+                      Min_Terminal_SegmentLength = min(Length, na.rm=TRUE),
+                      IQR_Terminal_SegmentLength = IQR(Length, na.rm=TRUE))
+
+
+ocotillo_data$Median_BranchLength = branches$Median_BranchLength # other typos
+ocotillo_data$BranchLength_IQR = branches$BranchLength_IQR # other typos
+ocotillo_data$Median_TerminalSeg = segments$Median_Terminal_SegmentLength
+ocotillo_data$Terminal_SegIQR = segments$IQR_Terminal_SegmentLength
 
 ocos = clean_ocos_data(ocotillo_data)               # all ocotillos
 ocos_baj = ocos[1:20,]                              # only ocotillos across the bajada
@@ -125,6 +145,73 @@ segs_baj = segs[1:1000,]
 Analyses below are multiple variate models of Fouquieria splendens morphology for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Ocotillos located on the bajada were encoded with site = 0 while ocotillos on the plain were encoded with site = 1. Interspecific neighbor group is split between two types – shrub and cactus – where cactus = 0 and shrub = 1. 
 
 ## Principal Component Analysis
+
+```{r}
+growthForm <- read.csv("data/growthForm2.csv", row.names = 1)
+```
+
+### Without IQR Vars:
+
+```{r}
+d = ocos[, c("Height", "Circumference", 
+             "Number_Branches", "Median_BranchLength", 
+             "Num_Nodes", "Median_TerminalSeg")]
+PCA_graphs(d, "(a) ")
+
+colnames(d) = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
+D = cor(d)
+test <- cor.mtest(d)$p
+corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+corrplot.mixed(D,lower.col = "black", number.cex = .7)
+```
+
+```{r fig.height=2.5, fig.width=2.6}
+# Plant 1 Removed | Without IQR Vars
+
+d = growthForm[-1, c(-5,-6)]
+PCA_graphs(d, "(a) ")
+
+colnames(d) = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
+D = cor(d)
+test <- cor.mtest(d)$p
+corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+corrplot.mixed(D,lower.col = "black", number.cex = .7)
+```
+
+### With IQR Vars:
+
+```{r fig.height=2.5, fig.width=2.6}
+# Plant 1 Removed 
+
+d = ocos[, c("Height", "Circumference", 
+             "Number_Branches", "Median_BranchLength", 
+             "Num_Nodes", "Median_TerminalSeg", 
+             "BranchLength_IQR",
+             "Terminal_SegIQR")]
+PCA_graphs(d, "(b)")
+
+colnames(d) = c("Height", "Circ", "NB", "M TSL", "TSL IQR", "BL IQR", "M BL", "Nodes")
+D = cor(d)
+test <- cor.mtest(d)$p
+corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+corrplot.mixed(D,lower.col = "black", number.cex = .7)
+```
+
+```{r fig.height=2.5, fig.width=2.6}
+# Plant 1 Removed 
+
+d = growthForm[-1, ]
+PCA_graphs(d, "(b)")
+
+colnames(d) = c("Height", "Circ", "NB", "M TSL", "TSL IQR", "BL IQR", "M BL", "Nodes")
+D = cor(d)
+test <- cor.mtest(d)$p
+corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+corrplot.mixed(D,lower.col = "black", number.cex = .7)
+```
+
+This PCA suggests that there is a lot of variation around range, so much so that it apparently drives the PCA when you add it in.
+
 
 ## Multiple Variate Modeling
 

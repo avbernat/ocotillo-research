@@ -25,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 growthForm <- read.csv("data/growthForm.csv", row.names = 1)
 growthForm <- read.csv("data/growthForm2.csv", row.names = 1)
-Groupings <- read_csv("data/Groupings.csv")
+# Groupings <- read_csv("data/Groupings.csv")
 ```
 
 ```{r}
@@ -57,9 +57,7 @@ Round <- function(number){
   }
 }
 
-```
 
-```{r}
 PCA_graphs <- function(dataset, PCA_title){
     GFpca <- PCA(dataset, scale.unit = TRUE, graph = TRUE, ncp = 10)
     
