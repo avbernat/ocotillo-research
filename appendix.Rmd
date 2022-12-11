@@ -8,7 +8,7 @@ output:
   pdf_document:
     includes: null
     toc: yes
-    toc_depth: 3
+    toc_depth: 4
     number_sections: true
   html_document:
     toc: yes
@@ -27,6 +27,8 @@ options(max.print = 10000)
 
 dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 setwd(dir)
+
+output_color = FALSE
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -75,13 +77,13 @@ library(gridExtra)
 ## Read Source Scripts 
 
 ```{r}
-source("src/cleaning_data.R")
-source("src/regression_output.R")
-source("src/diagnostics.R")
-source("src/pretty_reg.R")
-source("src/pca.R")
+source("src/cleaning_data.R")     # clean_ocos_data(), clean_segs_data()
+source("src/regression_output.R") # tidy_regression()
+source("src/diagnostics.R")       # plot_diagnostic()
+source("src/pretty_reg.R")        # rename_regformula() and rename_regformulaME()
+source("src/pca.R")               # PCA_graphs()
+source("src/model_metrics.R")     # calculate_lk_weights()
 ```
-
 
 ## Read the Data 
 
@@ -128,11 +130,30 @@ All measurements followed log-normal distributions except for circumference, med
 Terminal segment length IQR has an outlier - Ocotillo 1 (see graphs.Rmd). In turn, the outlier was removed and logHeight is predicted with a smaller dataset containing all ocotillos except Ocotillo 1.
 
 ```{r}
+# Cleveland Dotplot & Boxplot
+par(mfrow=c(2,2))
+x = segs$Length
+y = seq(1, length(x),)
+plot(x,y, ylab="Order of the data", xlab="Terminal Segment Length")
+boxplot(segs$Length)
+
+segs = segs[segs$Tree != 1,] # remove Plant 1 outlier 
+
+x = segs$Length
+y = seq(1, length(x),)
+plot(x,y, ylab="Order of the data", xlab="Terminal Segment Length")
+boxplot(segs$Length)
+```
+
+```{r}
 dixon.test(ocos$Terminal_SegIQR)
 ```
+
 ```{r}
 ocos_data = ocotillo_data[ocotillo_data$Tree != 1,]
 segs_data = segment_data[segment_data$Tree != 1,]
+
+segs_data = segs_data[complete.cases(segs_data$Length),] # also need to remove rows with NA Length
 
 # rerun data cleaning to generate newly transformed columns
 ocos = clean_ocos_data(ocos_data)               
@@ -147,14 +168,9 @@ Analyses below are multiple variate models of Fouquieria splendens morphology fo
 
 ## Principal Component Analysis
 
-```{r}
-growthForm <- read.csv("data/growthForm2.csv", row.names = 1)
-```
-
-### Without and With IQR Vars:
+### Without and With IQR Variables:
 
 ```{r}
-
 # Without IQR Vars:
 d = ocos[, c("Height", "Circumference", 
              "Number_Branches", "Median_BranchLength", 
@@ -176,52 +192,830 @@ grid.arrange(pca, pca_IQR, nrow=1)
 
 This PCA suggests that there is a lot of variation around range, so much so that it apparently drives the PCA when you add it in.
 
-## Multiple Variate Modeling
+## Addressing Multicollinearity
 
-### Testing Covariates 
-
-Only significant covariates are listed below:
+Elevation and site were highly correlated (R = -0.86), which led to multicollinearity. In turn, we removed any interactions between elevation and site in the model comparison process in order to minimize relationships that were spurious.
 
 ```{r}
-output_color = FALSE
+cor(ocos$Site, ocos$Elevation_c)
 ```
 
-```{r echo=FALSE}
-m1 = lm(logHeight ~ Elevation_c, data=ocos)
-m2 = lm(Height_c ~ Site, data=ocos)
-m3 = lm(logHeight ~ Site, data=ocos)
-m4 = lm(Height ~ Median_BL_c, data=ocos)
-m5 = lm(logHeight ~ Median_BL_c, data=ocos)
-m6 = lm(Height ~ NumNodes_c, data=ocos)
-m7 = lm(logHeight ~ NumNodes_c, data=ocos)
+## Multiple Variate Modeling
 
-tidy_regression(m1, output_color) 
-tidy_regression(m2, output_color)
-tidy_regression(m3, output_color)
-tidy_regression(m4, output_color) 
-tidy_regression(m5, output_color)
-tidy_regression(m6, output_color)
-tidy_regression(m7, output_color)
+### Height
+
+#### Plain and Bajada
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos$logHeight,
+                 A=ocos$Site,
+                 B=ocos$NumNodes_c, 
+                 C=ocos$Median_BL_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+&nbsp;
+
+```{r results='hold'}
+anova(m12, m9, test="Chisq") # Adding B does not improve fit
+anova(m9, m5, test="Chisq") # Adding A*C improves fit
+# anova(m3, m0, test="Chisq") # Adding C improves fit
+# anova(m1, m0, test="Chisq") # Adding A improves fit
+```
+&nbsp;
+
+**Best Fit**
+
+```{r}
+M1 = lm(logHeight ~ Site * Median_BL_c, data=ocos) # our best fit model before was just Site + Median_BL_c
+summary(M1)
+```
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableH = calculate_lk_weights(model_list=list(m0, m1, m3, m5, m9), best_fit=m9, 
+                                      R="logHeight", A="Site", B="Elevation_c", C="Median_BL_c")
+
+summary_tableH
+```
+
+&nbsp;
+
+**T-Test (Height vs. Site)**
+
+```{r results='hold'}
+# significant difference exists even if Plant 1 is removed
+t.test(ocos$Height~ocos$Site)
+t.test(ocos$logHeight~ocos$Site)
+```
+
+#### Bajada Only
+
+&nbsp;
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos_baj$logHeight,
+                 A=ocos_baj$NumNodes_c,
+                 B=ocos_baj$Elevation_c, 
+                 C=ocos_baj$Median_BL_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+&nbsp;
+
+```{r results='hold'}
+anova(m3, m6, test="Chisq") # Adding B does not improve fit 
+anova(m3, m5, test="Chisq") # Adding A does not improve fit
+anova(m3, m0, test="Chisq") # Adding C improves fit
+```
+&nbsp;
+
+**Best Fit**
+
+```{r}
+M2 = lm(logHeight ~ Median_BL_c, data=ocos_baj) 
+summary(M2)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableH2 = calculate_lk_weights(model_list=list(m0, m3, m5, m6), best_fit=m3, 
+                                      R="logHeight", A="NumNodes_c", B="Elevation_c", C="Median_BL_c")
+
+summary_tableH2
 ```
 
 
-### Branch Length and Elevation Affect Number of Nodes
+#### Summary: Site And Median Branch Length Affect Height
 
-### Height, Number of Nodes, and Terminal Segment Length IQR Affect Median Branch Length
+Before proceeding, re-reading the full dataset. No outliers for the remaining model comparisons.
 
-### Number of Nodes, Branch Length IQR, and Number of Cacti Affect Terminal Segment Lengths
+```{r}
+ocos_data = ocotillo_data
+segs_data = segment_data
 
-### Number of Branches Affects Circumference
+# rerun data cleaning to generate newly transformed columns
+ocos = clean_ocos_data(ocos_data)               
+ocos_baj = ocos[1:20,]                            
+# segs = clean_segs_data(segs_data, ocos_data)
+# segs_baj = segs[1:1000,]                        
+```
+
+### Number of Nodes 
+
+#### Plain and Bajada
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos$logNodes,
+                 A=ocos$Site,
+                 B=ocos$Median_BL_c, 
+                 C=ocos$Elevation_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+&nbsp;
+
+```{r results='hold'}
+anova(m10, m6, test="Chisq") # Adding B*C does not improve fit
+anova(m7, m6, test="Chisq") # Adding A does not improve fit
+anova(m6, m2, test="Chisq") # Adding C improves fit
+anova(m6, m3, test="Chisq") # Adding B improves fit
+```
+
+&nbsp;
+
+**Best Fit**
+  
+```{r}
+M7 = lm(logNodes ~ Median_BL_c + Elevation_c, data=ocos)
+summary(M7)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableNN = calculate_lk_weights(model_list=list(m0, m1, m2, m4, m6, m7, m10), best_fit=m6,
+                                       R="logNodes", A="Site", B="Median_BL_c", C="Elevation_c")
+
+summary_tableNN
+```
+
+
+#### Bajada Only
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos_baj$logNodes,
+                 A=ocos_baj$Median_BL_c, 
+                 B=ocos_baj$TSegIQR_c,
+                 C=ocos_baj$BL_IQR_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m7, m5, test="Chisq") # Adding B marginally improves fit
+anova(m7, m4, test="Chisq") # Adding C marginally improves fit
+anova(m4, m2, test="Chisq") # Adding B improves fit
+anova(m4, m1, test="Chisq") # Adding A improves fit
+```
+
+**Best Fit**
+  
+```{r}
+M8 = lm(logNodes ~ Median_BL_c + TSegIQR_c, data=ocos_baj)
+summary(M8)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+  
+```{r}
+summary_tableNN2 = calculate_lk_weights(model_list=list(m0, m1, m2, m4, m5, m7), best_fit=m4, 
+                                       R="logNodes", A="Median_BL_c", B="TSegIQR_c", C="")
+
+summary_tableNN2
+```
+
+#### Summary: Branch Length and Elevation Affect Number of Nodes
+
+### Median Branch Length
+
+#### Plain and Bajada
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos$logMedian_BL,
+                 A=ocos$Site,
+                 B=ocos$Height_c, 
+                 C=ocos$TSegIQR_c,
+                 D=ocos$NumNodes_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m10, m4, test="Chisq") # Adding C improves fit
+anova(m10, m3, test="Chisq") # Adding D improves fit
+```
+
+&nbsp;
+
+**Best Fit**
+  
+```{r}
+M9 = lm(logMedian_BL ~ TSegIQR_c + NumNodes_c, data=ocos)
+summary(M9)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+  
+```{r}
+summary_tableBL = calculate_lk_weights(model_list=list(m0, m3, m4, m10), best_fit=m10, 
+                                       R="logMedian_BL", A="Site", B="Height_c", C="TSegIQR_c", D="NumNodes_c")
+
+summary_tableBL
+```
+
+#### Bajada Only
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos_baj$logMedian_BL,
+                 A=ocos_baj$Height_c, 
+                 B=ocos_baj$TSegIQR_c,
+                 C=ocos_baj$NumNodes_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+&nbsp;
+
+```{r results='hold'}
+anova(m11, m7, test="Chisq") # Adding A*B marginally improves fit
+anova(m7, m5, test="Chisq") # Adding B improves fit
+anova(m7, m4, test="Chisq") # Adding C improves fit
+anova(m7, m6, test="Chisq") # Adding A does not improve fit
+anova(m6, m3, test="Chisq") # Adding C improves fit
+anova(m6, m2, test="Chisq") # Adding B improves fit
+```
+
+
+&nbsp;
+
+**Best Fit**
+  
+```{r}
+M10 = lm(logMedian_BL ~ TSegIQR_c + NumNodes_c, data=ocos_baj)
+summary(M10)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+  
+```{r}
+summary_tableBL2 = calculate_lk_weights(model_list=list(m0, m2, m3, m6), best_fit=m6, 
+                                       R="logMedian_BL", A="Height_c", B="TSegIQR_c", C="NumNodes_c")
+
+summary_tableBL2
+```
+
+#### Summary: Height, Number of Nodes, and Terminal Segment Length IQR Affect Median Branch Length
+
+### Circumference 
+
+#### Plain and Bajada
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos$logCirc,
+                 A=ocos$NBranch_c,
+                 B=ocos$Site)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m4, m3, test='Chisq') # Adding A*B does not improve fit
+anova(m3, m1, test='Chisq') # Adding B does not improve fit
+anova(m1, m0, test='Chisq') # Adding A does improve fit
+```
+
+&nbsp;
+
+**Best Fit**
+
+```{r}
+M3 = lm(logCirc ~ NBranch_c, data=ocos) 
+summary(M3)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableC = calculate_lk_weights(model_list=list(m0, m1, m3, m4), best_fit=m2, 
+                                      R="logCirc", A="NBranch_c", B="Site", C=" ")
+
+summary_tableC
+```
+
+#### Bajada Only
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos_baj$logCirc,
+                 A=ocos_baj$NBranch_c,
+                 B=ocos_baj$X1m_Num4) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m4, m3, test='Chisq') # Adding A*B does not improve fit
+anova(m3, m1, test='Chisq') # Adding B does improve fit
+anova(m3, m2, test="Chisq") # Adding A does improve fit
+```
+
+&nbsp;
+
+**Best Fit**
+
+```{r}
+M4 = lm(logCirc ~ NBranch_c + X1m_Num4, data=ocos_baj) # ??? Test PCA with other variables
+summary(M4)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableC2 = calculate_lk_weights(model_list=list(m0, m1, m3, m4), best_fit=m3, 
+                                      R="logCirc", A="NBranch_c", B="X1m_Num4", C=" ")
+
+summary_tableC2
+```
+
+#### Summary: Number of Branches Affects Circumference
+
+### Number of Branches 
+
+#### Plain and Bajada
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos$logNB,
+                 A=ocos$Circ_c,
+                 B=ocos$Inter_plant_b, 
+                 C=ocos$Inter_Dis_c,
+                 D=ocos$Arroyo_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 4-FF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m32, m13, test='Chisq') # Adding C*D does not improve fit
+anova(m15, m13, test='Chisq') # Adding B does not improve fit
+anova(m13, m7, test='Chisq')  # Adding C marginally improves fit
+anova(m13, m10, test='Chisq') # Adding A improves fit
+anova(m10, m3, test='Chisq')  # Adding D improves fit
+```
+
+&nbsp;
+
+**Best Fit**
+  
+```{r}
+M5 = lm(logNB ~ Circ_c + Inter_Dis_c + Arroyo_c, data=ocos) 
+summary(M5)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+  
+```{r}
+data<-data.frame(R=ocos$logNB,
+                 A=ocos$Circ_c,
+                 B=ocos$Inter_plant_b, 
+                 C=ocos$Inter_Dis_c,
+                 D=ocos$Arroyo_c) 
+
+```
+  
+```{r}
+summary_tableNB = calculate_lk_weights(model_list=list(m0, m3, m4, m10, m13), best_fit=m13, 
+                              R="logNB", A="Circ_c", B="Inter_plant_b", C="Inter_Dis_c", D="Arroyo_c")
+
+summary_tableNB
+```
+
+
+**T-Test (Number of Branches vs. Interspecific Plant Group)**
+
+```{r}
+t.test(ocos$logNB~ocos$Inter_Plant_Group)
+```
+
+
+#### Bajada Only
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos_baj$logNB,
+                 A=ocos_baj$Inter_plant_b,
+                 B=ocos_baj$Circ_c, 
+                 C=ocos_baj$Intra_Dis_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m17, m15, test="Chisq") # Adding A*C does not improve fit
+anova(m15, m13, test="Chisq") # Adding A*B improves fit
+anova(m13, m10, test="Chisq") # Adding A marginally improves fit
+anova(m10, m6, test="Chisq") # Adding B*C improves fit
+```
+
+&nbsp;
+
+**Best Fit**
+  
+```{r}
+M6 = lm(logNB ~ Inter_plant_b*Circ_c +Circ_c*Intra_Dis_c, data=ocos_baj)
+summary(M6)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableNB2 = calculate_lk_weights(model_list=list(m0, m2, m3, m6, m10, m13, m15), best_fit=m15,
+                                       R="logNB", A="Inter_plant_b", B="Circ_c", C="Intra_Dis_c")
+
+summary_tableNB2
+```
+
+#### Summary: Circumference, Major Interspecific Group, and Arroyo Distance Affect Number of Branches
+
+## Mixed Effect, Multiple Variate Modeling
+
+### Terminal Segment Lengths 
+
+#### Plain and Bajada 
+
+&nbsp;
+
+**Model Comparisons**
+
+
+```{r}
+data<-data.frame(R=segs$Length_c,
+                 A=segs$T1m_NumCacti, 
+                 B=segs$Num_Nodes_c, 
+                 C=segs$BranchLength_IQR_c,
+                 X=segs$Tree,
+                 Y=segs$seg_num)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lmer 2-RF + 3-FF REMLF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m17, m15, test="Chisq") # Adding A*C does not improve fit
+anova(m15, m13, test="Chisq") # Adding A*B improves fit
+anova(m15, m11, test="Chisq") # Adding B*C does not improve fit
+# anova(m15, m11, test="Chisq") # Adding B*C improves fit
+anova(m11, m7, test="Chisq") # Adding A*B does improve fit
+anova(m11, m4, test="Chisq") # Adding C improves fit
+```
+&nbsp;
+
+**Best Fit**
+  
+```{r}
+# M11 = lmer(Length_c ~ T1m_NumCacti * Num_Nodes_c + Num_Nodes_c * BranchLength_IQR_c + 
+#                                                     (1 | Tree) + (1 | seg_num), data=segs)
+# summary(M11)
+M11 = lmer(Length_c ~ T1m_NumCacti * Num_Nodes_c + Num_Nodes_c + BranchLength_IQR_c + 
+                                                    (1 | Tree) + (1 | seg_num), data=segs)
+summary(M11)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+# summary_tableSL = calculate_lk_weights(model_list=list(m0, m1, m2, m3, m4, m5, m6, m7, m11, m13, m15),
+#                                       best_fit=m15, 
+#                                       R="Length_c", A="T1m_NumCacti", B="Num_Nodes_c", C="BranchLength_IQR_c",
+#                                       X="Tree", Y="seg_num", is_lm=FALSE) 
+summary_tableSL = calculate_lk_weights(model_list=list(m0, m4, m7, m11),
+                                      best_fit=m11, 
+                                      R="Length_c", A="T1m_NumCacti", B="Num_Nodes_c", C="BranchLength_IQR_c",
+                                      X="Tree", Y="seg_num", is_lm=FALSE) 
+
+summary_tableSL$Equation = gsub("T1m_NumBranchLength_IQLength_c_cacti", "T1m_NumCacti",
+                                summary_tableSL$Equation )
+summary_tableSL$Equation = gsub("BranchLength_IQLength_c_c", "BranchLength_IQR_c", 
+                                summary_tableSL$Equation)
+
+summary_tableSL
+```
+
+#### Bajada Only
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=segs_baj$Length_c,
+                 A=segs_baj$T1m_NumCacti, 
+                 B=segs_baj$Num_Nodes_c, 
+                 C=segs_baj$BranchLength_IQR_c,
+                 X=segs_baj$Tree,
+                 Y=segs_baj$seg_num)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lmer 2-RF + 3-FF REMLF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+# anova(m15, m13, test="Chisq") # Adding A*B does not improve fit
+# anova(m13, m10, test="Chisq") # Adding A marginally improves fit
+# anova(m10, m6, test="Chisq") # Adding B*C improves fit
+```
+
+```{r results='hold'}
+anova(m11, m7, test="Chisq") # Adding A*B does not improve fit
+anova(m12, m7, test="Chisq") # Adding A*C does not improve fit
+anova(m13, m7, test="Chisq") # Adding B*C does not improve fit
+anova(m7, m6, test="Chisq") # Adding A improves fit
+anova(m7, m5, test="Chisq") # Adding B improves fit
+anova(m7, m4, test="Chisq") # Adding C improves fit
+```
+
+&nbsp;
+
+**Best Fit**
+
+```{r}
+# M12 = lmer(Length_c ~ Num_Nodes_c * BranchLength_IQR_c + (1 | Tree) + (1 | seg_num), data=segs_baj)
+# summary(M12)
+M12 = lmer(Length_c ~ T1m_NumCacti + Num_Nodes_c + BranchLength_IQR_c + (1 | Tree) + (1 | seg_num), data=segs_baj)
+summary(M12)
+```
+
+**Likelihood and Weights**
+  
+```{r}
+# summary_tableSL2 = calculate_lk_weights(model_list=list(m0, m2, m3, m6, m10), best_fit=m10, 
+#                                        R="Length_c", A="T1m_NumCacti", B="Num_Nodes_c", C="BranchLength_IQR_c",
+#                                        X="Tree", Y="seg_num", is_lm=FALSE)
+
+summary_tableSL2 = calculate_lk_weights(model_list=list(m0, m1, m2, m3, m4, m5, m7), best_fit=m7, 
+                                       R="Length_c", A="T1m_NumCacti", B="Num_Nodes_c", C="BranchLength_IQR_c",
+                                       X="Tree", Y="seg_num", is_lm=FALSE)
+
+summary_tableSL2$Equation = gsub("BranchLength_IQLength_c_c", "BranchLength_IQR_c", 
+                                summary_tableSL2$Equation)
+summary_tableSL2
+```
+
+#### Summary: Number of Nodes, Branch Length IQR, and Number of Cacti Affect Terminal Segment Lengths
+
+
 
 # Ocotillo Neighbors and Site Geography
 
 ## Multiple Variate Modeling
 
-### Circumference, Major Interspecific Group, and Arroyo Distance Affect Number of Branches
+### Nearest Ocotillo Distance
 
-### Elevation and Ocotillo Size Relates to Nearest Ocotillo Distance
+#### Plain and Bajada
 
-### Arroyo Distance Relates to Interspecific Distance
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos$logIntraD,
+                 A=ocos$Height_c,
+                 B=ocos$Elevation_c, 
+                 C=ocos$Circ_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+&nbsp;
+
+```{r results='hold'}
+anova(m17, m16, test='Chisq') # Adding A*B does not improve fit
+anova(m16, m12, test='Chisq') # Adding B*C improves fit
+anova(m16, m13, test='Chisq') # Adding A*C improves fit
+```
+
+&nbsp;
+
+**Best Fit**
+  
+```{r}
+M13 = lm(logIntraD ~ Height_c * Circ_c + Elevation_c * Circ_c, data=ocos)
+summary(M13)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableOD = calculate_lk_weights(model_list=list(m0, m13, m16), best_fit=m16, 
+                                       R="logIntraD", A="Height_c", B="Elevation_c", C="Circ_c")
+
+summary_tableOD
+```
+
+#### Bajada Only
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos_baj$logIntraD,
+                 A=ocos_baj$Elevation_c,
+                 B=ocos_baj$NBranch_c,
+                 C=ocos_baj$Inter_Dis_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
+```
+&nbsp;
+
+```{r results='hold'}
+anova(m15, m13, test="Chisq") # Adding A*B does not improve fit
+anova(m13, m10, test="Chisq") # Adding A improves fit
+```
+
+&nbsp;
+
+**Best Fit**
+
+```{r}
+M14 = lm(logIntraD ~ NBranch_c * Inter_Dis_c + Elevation_c, data=ocos_baj)
+summary(M14)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableOD2 = calculate_lk_weights(model_list=list(m0, m10, m13), best_fit=m13, 
+                                       R="logIntraD", A="Elevation_c", B="NBranch_c", C="Inter_Dis_c")
+
+summary_tableOD2
+```
+
+#### Summary: Elevation and Ocotillo Size Relates to Nearest Ocotillo Distance
+
+### Interspecific Distance
+
+#### Plain and Bajada 
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos$logInterD,
+                 A=ocos$Arroyo_c,
+                 B=ocos$Elevation_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m3, m1, test="Chisq") # Adding B does not improve fit
+anova(m1, m0, test="Chisq") # Adding A improves fit
+anova(m2, m0, test="Chisq") # Adding B does not improve fit
+```
+&nbsp;
+
+**Best Fit**
+  
+```{r}
+M15 = lm(logInterD ~ Arroyo_c, data=ocos_baj)
+summary(M15)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+                 
+```{r}
+summary_tableID = calculate_lk_weights(model_list=list(m0, m1), best_fit=m1, 
+                                       R="logInterD", A="Arroyo_c", B="Elevation_c", C="")
+
+summary_tableID
+```
+
+#### Bajada Only
+
+&nbsp;
+
+**Model Comparisons**
+
+```{r}
+data<-data.frame(R=ocos_baj$logInterD,
+                 A=ocos_baj$Arroyo_c,
+                 B=ocos_baj$Elevation_c) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian lm 2-FF.R")
+```
+
+&nbsp;
+
+```{r results='hold'}
+anova(m3, m1, test="Chisq") # Adding B does not improve fit
+anova(m1, m0, test="Chisq") # Adding A improves fit
+```
+
+&nbsp;
+
+**Best Fit**
+
+```{r}
+M17 = lm(logInterD ~ Arroyo_c, data=ocos_baj)
+summary(M17)
+```
+
+&nbsp;
+
+**Likelihood and Weights**
+
+```{r}
+summary_tableID2 = calculate_lk_weights(model_list=list(m0, m1), best_fit=m1, 
+                                       R="logInterD", A="Arroyo_c", B="Elevation_c", C="")
+
+summary_tableID2
+```
+
+#### Summary: Arroyo Distance Relates to Interspecific Distance
 
 
 

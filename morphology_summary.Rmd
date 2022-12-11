@@ -35,31 +35,50 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Analyses below are multivariate models of Fouquieria splendens morphology for ocotillos located on both a bajada and a plain in Organ Pipe National Monument, Arizona. All models were grouped by their response variable and ordered by their ascending AIC values. Dataset "ocos" indicates all individuals measured on the bajada and plain while "ocos_baj" indicates only the individuals measured on the bajada. Ocotillos located on the bajada were encoded with site = 0 while ocotillos on the plain were encoded with site = 1. Interspecific neighbor group is split between two types – shrub and cactus – where cactus = 0 and shrub = 1. 
 
-## Reading and Cleaning the Data
+## Read Source Scripts 
 
 ```{r}
-source("src/cleaning_data.R")
-source("src/regression_output.R")
-output_col = FALSE
+source("src/cleaning_data.R")     # clean_ocos_data(), clean_segs_data()
+source("src/regression_output.R") # tidy_regression()
+source("src/diagnostics.R")       # plot_diagnostic()
+source("src/pretty_reg.R")        # rename_regformula() and rename_regformulaME()
+source("src/pca.R")               # PCA_graphs()
+source("src/model_metrics.R")     # calculate_lk_weights()
 ```
+
+## Read the Data 
 
 ```{r}
 ocotillo_data = read.csv("data/General_Oco_Data3.csv", 
                             fileEncoding="UTF-8-BOM",  stringsAsFactors=TRUE)
-segment_data = read.csv("data/Terminal_5Segs.csv", 
-                            fileEncoding="UTF-8-BOM",  stringsAsFactors=TRUE)
+branch_data = read.csv("data/branch_lengths_long.csv")
+segment_data = read.csv("data/Terminal_5Segs.csv")
+
+branches = branch_data  %>%
+            group_by(Tree) %>%
+            summarize(Mean_BranchLength = mean(BranchLength, na.rm=TRUE),
+                      Median_BranchLength = median(BranchLength, na.rm=TRUE),
+                      Max_BranchLength = max(BranchLength, na.rm=TRUE),
+                      Min_BranchLength = min(BranchLength, na.rm=TRUE),
+                      BranchLength_IQR = IQR(BranchLength, na.rm=TRUE))
+segments = segment_data %>%
+            group_by(Tree) %>%
+            summarize(Mean_Terminal_SegmentLength = mean(Length, na.rm=TRUE),
+                      Median_Terminal_SegmentLength = median(Length, na.rm=TRUE),
+                      Max_Terminal_SegmentLength = max(Length, na.rm=TRUE),
+                      Min_Terminal_SegmentLength = min(Length, na.rm=TRUE),
+                      IQR_Terminal_SegmentLength = IQR(Length, na.rm=TRUE))
+
+
+ocotillo_data$Median_BranchLength = branches$Median_BranchLength # other typos
+ocotillo_data$BranchLength_IQR = branches$BranchLength_IQR # other typos
+ocotillo_data$Median_TerminalSeg = segments$Median_Terminal_SegmentLength
+ocotillo_data$Terminal_SegIQR = segments$IQR_Terminal_SegmentLength
 
 ocos = clean_ocos_data(ocotillo_data)               # all ocotillos
 ocos_baj = ocos[1:20,]                              # only ocotillos across the bajada
 segs = clean_segs_data(segment_data, ocotillo_data) # all ocotillos
-seg_baj = segs[1:1000,]                             # only ocotillos across the bajada
-```
-
-## Functions
-
-```{r}
-source("src/diagnostics.R") # plot_diagnostic
-source("src/pretty_reg.R") # rename_regformulaME
+segs_baj = segs[1:1000,]                            # only ocotillos across the bajada
 ```
 
 ## Normality
@@ -73,12 +92,26 @@ All measurements followed log-normal distributions except for circumference, med
 When model comparisons are conducted with the full ocos dataset, the best fit model includes site and terminal segment length IQR as predictors to logHeight. However, terminal segment length IQR has an outlier - Ocotillo 1 (see graphs.Rmd). In turn, the outlier was removed and logHeight is predicted with a smaller dataset containing all ocotillos except Ocotillo 1.
 
 ```{r}
-ocos = all_data[[2]]
 dixon.test(ocos$Terminal_SegIQR)
 ```
 
 ```{r}
-ocos = ocos[-1,]
+ocos_data = ocotillo_data[ocotillo_data$Tree != 1,]
+segs_data = segment_data[segment_data$Tree != 1,]
+
+# rerun data cleaning to generate newly transformed columns
+ocos = clean_ocos_data(ocos_data)               
+ocos_baj = ocos[1:20,]                            
+segs = clean_segs_data(segs_data, ocos_data)
+segs_baj = segs[1:1000,]                        
+```
+
+```{r}
+dixon.test(ocos$Terminal_SegIQR)
+```
+
+```{r}
+# ocos = ocos[-1,]
 n_height = nrow(ocos)
 
 # center variables
@@ -93,6 +126,10 @@ ocos$NumNodes_c = ocos$Num_Nodes - mean(ocos$Num_Nodes, na.rm=TRUE)
 **Testing Covariates**
 
 Only significant covariates are listed below:
+
+```{r}
+output_col = TRUE
+```
 
 ```{r echo=FALSE}
 m1 = lm(logHeight ~ Elevation_c, data=ocos)
@@ -245,7 +282,7 @@ rowH
 ### t-test (Height vs. Site)
 
 ```{r}
-ocos = all_data[[2]] # significant difference exists even if Plant 1 is removed
+# ocos = all_data[[2]] # significant difference exists even if Plant 1 is removed
 t.test(ocos$Height~ocos$Site)
 t.test(ocos$logHeight~ocos$Site)
 ```
@@ -303,6 +340,7 @@ model_comparisonsAIC("src/generic models-gaussian lm 3-FF.R")
 anova(m3, m5, test="Chisq") # Adding A does not improve fit
 anova(m3, m6, test="Chisq") # Adding B does not improve fit 
 ```
+
 **Plot diagnostics**
 
 All passed. Residuals are independent.
@@ -401,6 +439,7 @@ plot_diagnostic(m1, ocos)
 plot_diagnostic(m2, ocos)
 plot_diagnostic(m3, ocos)
 ```
+
 **Model Comparisons**
 
 Null model was the top model for all other combinations of covariates except this combination:
@@ -1770,6 +1809,8 @@ n_segs.b = nrow(data)
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
 ```
+
+
 ```{r}
 anova(m5, m7, test="Chisq") # Adding B marginally improves fit
 anova(m6, m7, test="Chisq") # Adding A marginally improves fit
