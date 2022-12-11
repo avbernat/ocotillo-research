@@ -25,6 +25,7 @@ rm(list=ls())
 
 options(max.print = 10000) 
 
+# dir = "/Users/Acacia/Desktop/gitrepo/ocotillo-research/"
 dir = "/Users/anastasiabernat/Desktop/git_repositories/ocotillo-research/"
 setwd(dir)
 
@@ -176,7 +177,22 @@ d = ocos[, c("Height", "Circumference",
              "Number_Branches", "Median_BranchLength", 
              "Num_Nodes", "Median_TerminalSeg")]
 abbreviations = c("Height", "Circ", "NB", "M TSL", "M BL", "Nodes")
-pca = PCA_graphs(d, "(a) ", abbreviations)
+pca = PCA(d, scale.unit = TRUE, graph = TRUE, ncp = 10)
+
+#Investiating variables
+eig.val <- get_eigenvalue(pca)
+eig.val
+fviz_eig(pca, addlabels = TRUE, ylim = c(0, 50))
+
+variables <- get_pca_var(pca)
+library("corrplot")
+corrplot(variables$cos2, is.corr=FALSE)
+
+corrplot(variables$contrib, is.corr=FALSE)
+
+GFdim <- dimdesc(pca, axes = c(1,2), proba = 0.05)
+GFdim$Dim.1
+GFdim$Dim.2
 
 # With IQR Vars:
 d = ocos[, c("Height", "Circumference", 
@@ -185,12 +201,34 @@ d = ocos[, c("Height", "Circumference",
              "BranchLength_IQR",
              "Terminal_SegIQR")]
 abbreviations = c("Height", "Circ", "NB", "M TSL", "TSL IQR", "BL IQR", "M BL", "Nodes")
-pca_IQR = PCA_graphs(d, "(b)", abbreviations)
+pca_IQR = PCA(d, scale.unit = TRUE, graph = TRUE, ncp = 10)
+#Investiating variables
+eig.val <- get_eigenvalue(pca)
+eig.val
+fviz_eig(pca, addlabels = TRUE, ylim = c(0, 50))
 
-grid.arrange(pca, pca_IQR, nrow=1)
+variables <- get_pca_var(pca)
+library("corrplot")
+corrplot(variables$cos2, is.corr=FALSE)
+
+corrplot(variables$contrib, is.corr=FALSE)
+
+GFdim <- dimdesc(pca, axes = c(1,2), proba = 0.05)
+GFdim$Dim.1
+GFdim$Dim.2
 ```
 
 This PCA suggests that there is a lot of variation around range, so much so that it apparently drives the PCA when you add it in.
+
+```{r}
+##Further Analysis
+#choose a PCA! Which one?
+pcaResults <- as.data.frame(pca$ind$coord)
+# growthForm$PC1 <- pcaResults$Dim.1
+# growthForm$PC2 <- pcaResults$Dim.2
+
+#Add in linear models!
+```
 
 ## Addressing Multicollinearity
 
@@ -199,6 +237,7 @@ Elevation and site were highly correlated (R = -0.86), which led to multicolline
 ```{r}
 cor(ocos$Site, ocos$Elevation_c)
 ```
+
 
 ## Multiple Variate Modeling
 
