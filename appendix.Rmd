@@ -65,10 +65,9 @@ require(FactoMineR) # PCA function
 library(factoextra) # get_eigenvalue function
 library(corrplot) # cor.mtest
 library(gridExtra)
+library(lme4) # ** this is read in another function
 # library(ggplot2)
 # library(olsrr)
-# library(lme4)
-# 
 # library(tidyverse)
 # library(ggpubr)
 # library(rstatix)
@@ -171,7 +170,7 @@ Analyses below are multiple variate models of Fouquieria splendens morphology fo
 
 ### Without and With IQR Variables:
 
-```{r}
+```{r echo=FALSE, eval = FALSE}
 # Without IQR Vars:
 d = ocos[, c("Height", "Circumference", 
              "Number_Branches", "Median_BranchLength", 
@@ -220,7 +219,7 @@ GFdim$Dim.2
 
 This PCA suggests that there is a lot of variation around range, so much so that it apparently drives the PCA when you add it in.
 
-```{r}
+```{r, echo=FALSE, eval = FALSE}
 ##Further Analysis
 #choose a PCA! Which one?
 pcaResults <- as.data.frame(pca$ind$coord)
